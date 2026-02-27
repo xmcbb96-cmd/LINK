@@ -1,4 +1,3 @@
-import 'https://testingcf.jsdelivr.net/npm/@vueuse/core/+esm'; // 引入外部依赖
 import { createPinia, defineStore } from 'https://testingcf.jsdelivr.net/npm/pinia/+esm'; // 引入 Pinia
 
 // JS-Slash-Runner 的 srcdoc iframe 内没有全局 Vue/jQuery，必须从父窗口获取
@@ -66,1201 +65,1104 @@ const offAllTrackedEvents = () => {
 };
 
 // ==========================================
-// 1. 样式注入 (CSS)
+// 1. CSS样式注入
 // ==========================================
+const STYLE_ID = 'multiplayer-mod-styles';
+const STYLE_VERSION = '2026-02-27-01';
+
 const injectStyles = () => {
     const targetDoc = parentWindow.document;
-    // 防止重复注入
-    if (targetDoc.getElementById('multiplayer-mod-styles')) return;
+
+    // 热重载时移除旧样式，确保新CSS必定生效
+    const prevStyle = targetDoc.getElementById(STYLE_ID);
+    if (prevStyle) {
+        prevStyle.remove();
+    }
+
     const style = targetDoc.createElement('style');
-    style.id = 'multiplayer-mod-styles';
+    style.id = STYLE_ID;
+    style.setAttribute('data-style-version', STYLE_VERSION);
     style.innerHTML = `
 
-/* ============================
-   主容器 - 悬浮面板
-   ============================ */
+/* =========================================================
+   00) Tokens / 设计令牌（可导入覆盖）
+   ========================================================= */
+:root {
+    /* 尺寸 */
+    --mp-full: 100%;
+    --mp-w: 320px;
+    --mp-min-w: 180px;
+    --mp-head-h: 40px;
+    --mp-ctrl-h: 30px;
+    --mp-chat-min-h: 80px;
+    --mp-chat-max-h: 120px;
 
-/* 面板主体：固定定位，毛玻璃背景，圆角阴影 */
+    /* 圆角 */
+    --mp-r1: 8px;
+    --mp-r2: 20px;
+    --mp-rp: 999px;
+    --mp-rr: 50%;
+
+    /* 间距 */
+    --mp-s1: 2px;
+    --mp-s2: 4px;
+    --mp-s3: 8px;
+    --mp-s4: 10px;
+    --mp-s5: 14px;
+    --mp-s6: 20px;
+    --mp-s7: 80px;
+
+    /* 字体族 */
+    --mp-ffm: "SimHei", "Microsoft YaHei", "Heiti SC", sans-serif;
+    --mp-ffs: "SimHei", "Microsoft YaHei", "Heiti SC", sans-serif;
+
+    /* 字号 */
+    --mp-f1: 10px;
+    --mp-f2: 12px;
+    --mp-f3: 14px;
+
+    /* 字重 */
+    --mp-w1: 400;
+    --mp-w2: 500;
+    --mp-w3: 700;
+
+    /* 图标 */
+    --mp-ic: 14px;
+
+    /* 标题文字（section title） */
+    --mp-t-fs: var(--mp-f1);
+    --mp-t-fw: var(--mp-w3);
+    --mp-t-ls: 0.5px;
+    --mp-t-tt: uppercase;
+    --mp-t-ff: var(--mp-ffm);
+
+    /* 小字体（hint/meta/empty） */
+    --mp-sm-fs: var(--mp-f1);
+    --mp-sm-fw: var(--mp-w1);
+    --mp-sm-ff: var(--mp-ffs);
+    --mp-sm-op: 0.8;
+
+    /* 输入框 */
+    --mp-in-h: var(--mp-ctrl-h);
+    --mp-in-py: 4px;
+    --mp-in-px: 10px;
+    --mp-in-fs: var(--mp-f3);
+    --mp-in-fw: var(--mp-w2);
+    --mp-in-ff: var(--mp-ffm);
+    --mp-in-bw: 2px;
+
+    /* 按钮 */
+    --mp-btn-h: var(--mp-ctrl-h);
+    --mp-btn-minw: 60px;
+    --mp-btn-py: 4px;
+    --mp-btn-px: 10px;
+    --mp-btn-fs: var(--mp-f1);
+    --mp-btn-fw: var(--mp-w2);
+    --mp-btn-ff: var(--mp-ffm);
+    --mp-btn-bw: 2px;
+
+    /* 创建并加入按钮（独立） */
+    --mp-cf: 12px;
+    --mp-ch: 34px;
+    --mp-cpx: 10px;
+
+    /* 动效 */
+    --mp-z: 99999;
+    --mp-fast: 0.2s;
+    --mp-mid: 0.3s;
+    --mp-ease: ease;
+
+    /* 基础 RGB 主题 */
+    --mp-brand: 99, 102, 241;
+    --mp-ok: 74, 222, 128;
+    --mp-warn: 251, 191, 36;
+    --mp-danger: 255, 59, 48;
+    --mp-host: 251, 191, 36;
+    --mp-spec: 56, 189, 248;
+    --mp-white: 255, 255, 255;
+    --mp-shadow: 0, 0, 0;
+    --mp-overlay: 20, 20, 30;
+
+    /* 透明度 */
+    --mp-at: 1;
+    --mp-abg: 0.98;
+
+    /* 图案（可选） */
+    --mp-ptn: none;
+    --mp-ptn-size: 12px 12px;
+
+    /* 全局语义兜底（避免面板外元素引用失效） */
+    --mp-text: var(--SmartThemeFontColor, #fff);
+    --mp-text-body: var(--SmartThemeBodyColor, var(--SmartThemeEmColor, #ddd));
+    --mp-title-c: var(--mp-text);
+
+    --mp-c-ok: rgb(var(--mp-ok));
+    --mp-c-warn: rgb(var(--mp-warn));
+    --mp-c-danger: rgb(var(--mp-danger));
+    --mp-c-host: rgb(var(--mp-host));
+    --mp-c-spec: rgb(var(--mp-spec));
+
+    --mp-c-gray-1: #666;
+    --mp-c-gray-2: #555;
+    --mp-c-gray-3: #ccc;
+    --mp-c-red-soft: #f87171;
+    --mp-c-violet: #a78bfa;
+    --mp-c-crown-hover: #fde68a;
+    --mp-c-white: #fff;
+    --mp-c-spoiler: #4a4a4a;
+    --mp-c-spoiler-h: #5a5a5a;
+}
+
+/* =========================================================
+   01) Layout / 布局容器
+   顺序：容器 -> 子项 -> 状态
+   ========================================================= */
 .multiplayer-panel {
+    /* 业务绑定色：可被 SmartTheme 覆盖 */
+    --mp-text: var(--SmartThemeFontColor, inherit);
+    --mp-text-body: var(--SmartThemeBodyColor, var(--SmartThemeEmColor, inherit));
+    --mp-title-c: var(--mp-text);
+
+    --mp-bg-panel: var(--SmartThemeBlurTintColor, rgba(var(--mp-overlay), var(--mp-abg)));
+    --mp-bg-surface: var(--SmartThemeChatColor, rgba(var(--mp-white), calc(0.10 * var(--mp-abg))));
+    --mp-bg-strong: rgba(var(--mp-brand), calc(0.30 * var(--mp-at)));
+
+    --mp-bd: rgba(var(--mp-brand), calc(0.35 * var(--mp-at)));
+    --mp-bd-strong: rgba(var(--mp-brand), calc(0.55 * var(--mp-at)));
+
+    --mp-hover: rgba(var(--mp-brand), calc(0.30 * var(--mp-at)));
+    --mp-hover-soft: rgba(var(--mp-brand), calc(0.15 * var(--mp-at)));
+    --mp-hover-danger: rgba(var(--mp-danger), calc(0.30 * var(--mp-at)));
+
+    --mp-scroll: rgba(var(--mp-brand), calc(0.50 * var(--mp-at)));
+
+    --mp-c-ok: rgb(var(--mp-ok));
+    --mp-c-warn: rgb(var(--mp-warn));
+    --mp-c-danger: rgb(var(--mp-danger));
+    --mp-c-host: rgb(var(--mp-host));
+    --mp-c-spec: rgb(var(--mp-spec));
+
+    /* 常用纯色也变量化 */
+    --mp-c-gray-1: #666;
+    --mp-c-gray-2: #555;
+    --mp-c-gray-3: #ccc;
+    --mp-c-red-soft: #f87171;
+    --mp-c-violet: #a78bfa;
+    --mp-c-crown-hover: #fde68a;
+    --mp-c-white: #fff;
+    --mp-c-spoiler: #4a4a4a;
+    --mp-c-spoiler-h: #5a5a5a;
+
     position: fixed;
-    width: 320px;
-    min-height: 44px;
-    max-height: calc(100vh - 40px);
-    background: var(--SmartThemeBlurTintColor, rgba(30, 30, 45, 0.98));
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(99, 102, 241, 0.5);
-    backdrop-filter: var(--SmartThemeBlur, blur(12px));
-    z-index: 99999;
-    font-family: inherit;
-    font-size: 13px;
-    color: var(--SmartThemeFontColor, inherit) !important;
+    z-index: var(--mp-z);
+    width: var(--mp-w);
+    min-height: var(--mp-head-h);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transition: all 0.3s ease;
+
+    font-family: var(--mp-ffm) !important;
+    font-size: var(--mp-f3);
+    font-weight: var(--mp-w2);
+    color: var(--mp-text) !important;
+
+    background: var(--mp-bg-panel);
+    background-image: var(--mp-ptn);
+    background-size: var(--mp-ptn-size);
+
+    border-radius: var(--mp-r2);
+    box-shadow:
+        0 10px 32px rgba(var(--mp-shadow), 0.5),
+        0 0 0 2px var(--mp-bd-strong);
+    backdrop-filter: var(--SmartThemeBlur, blur(10px));
+
+    transition:
+        box-shadow var(--mp-mid) var(--mp-ease),
+        opacity var(--mp-fast) var(--mp-ease);
 }
 
-/* 最小化状态：收缩为仅显示标题栏 */
 .multiplayer-panel.minimized {
     width: fit-content;
-    min-width: 175px;
-    max-height: 44px;
+    min-width: var(--mp-min-w);
+    max-height: var(--mp-head-h);
 }
 
-/* 最小化时标题栏内边距微调 */
-.multiplayer-panel.minimized .panel-header {
-    padding: 10px 14px;
+.multiplayer-panel.settings-open:not(.minimized) {
+    height: min(520px, calc(100vh - 20px));
+    max-height: min(520px, calc(100vh - 20px));
 }
 
-/* 拖拽中状态：半透明 + 抓取光标 */
 .multiplayer-panel.dragging {
     opacity: 0.9;
     cursor: grabbing;
 }
 
-/* ============================
-   头部栏 - 标题 + 操作按钮
-   ============================ */
-
-/* 头部容器：靛蓝半透背景，可拖拽 */
+/* 头部 */
 .panel-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 12px 14px;
-    background: rgba(99, 102, 241, 0.3);
+    justify-content: space-between;
+    height: var(--mp-head-h);
+    padding: 0 var(--mp-s5);
+    background: var(--mp-bg-strong);
     cursor: grab;
-    -webkit-user-select: none;
-    user-select: none;
-    position: relative;
     touch-action: none;
+    user-select: none;
 }
 
-/* 头部左侧：状态灯 + 标题文字 */
-.header-left {
+.header-left,
+.header-actions {
     display: flex;
     align-items: center;
-    gap: 8px;
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
+    gap: var(--mp-s2);
 }
 
-/* 标题文字：加粗，溢出省略 */
+.header-left {
+    flex: 1;
+    min-width: 0;
+}
+
 .title {
-    font-weight: 600;
-    font-size: 14px;
-    color: var(--SmartThemeFontColor, inherit);
+    flex: 1;
+    min-width: 0;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    font-family: var(--mp-ffm);
+    font-size: var(--mp-f3);
+    font-weight: var(--mp-w2);
+    color: var(--mp-text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    height: 24px;
 }
 
-/* ============================
-   状态指示灯
-   ============================ */
-
-/* 默认状态：灰色圆点 */
-.status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #666;
-}
-
-/* 已连接：绿色 + 发光 */
-.status-dot.connected {
-    background: #4ade80;
-    box-shadow: 0 0 8px #4ade80;
-}
-
-/* 连接中：黄色 + 慢闪 */
-.status-dot.connecting {
-    background: #facc15;
-    animation: pulse 1s infinite;
-}
-
-/* .status-dot.unstable 已下线（当前状态机未使用） */
-
-/* 已断开：灰色（与默认一致） */
-.status-dot.disconnected {
-    background: #666;
-}
-
-/* 呼吸灯动画 */
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.5;
-    }
-}
-
-/* ============================
-   头部操作按钮
-   ============================ */
-
-/* 按钮组容器 */
-.header-actions {
-    display: flex;
-    gap: 4px;
-    align-items: center;
-}
-
-/* 图标按钮：24px 正方形，圆角，居中图标 */
-.icon-btn {
-    width: 24px;
-    height: 24px;
-    border: none;
-    background: var(--SmartThemeChatColor, rgba(128, 128, 128, 0.15));
-    color: var(--SmartThemeFontColor, inherit);
-    border-radius: 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    transition: background 0.2s;
-    margin: 0;
-    flex-shrink: 0;
-}
-
-/* 图标按钮悬停：靛蓝高亮 */
-.icon-btn:hover {
-    background: rgba(99, 102, 241, 0.3);
-}
-
-/* 危险操作按钮悬停：红色高亮 */
-.icon-btn.danger-icon:hover {
-    background: rgba(255, 59, 48, 0.3);
-    color: #ff3b30;
-}
-
-/* ============================
-   内容区 - 主体滚动区域
-   ============================ */
-
-/* 内容容器：弹性纵向布局，可滚动 */
+/* 内容容器 */
 .panel-content {
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 10px;
-    gap: 8px;
-    overflow-y: auto;
-    overflow-x: hidden;
+    gap: var(--mp-s2);
+    padding: var(--mp-s4);
+    overflow: auto;
 }
 
-/* ============================
-   设置区域 - 未连接时的配置表单
-   ============================ */
-
-/* 设置区块容器 */
-.settings-section {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-/* 用户名区块：小标题 + 输入框，底部长条分隔 */
+.settings-section,
+.online-rooms-section,
+.create-room-section,
 .username-section {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* 单行设置：标签 + 输入框水平排列 */
+.settings-section,
+.online-rooms-section {
+    gap: var(--mp-s4);
+}
+
+.create-room-section {
+    margin-top: var(--mp-s4);
+    padding-top: var(--mp-s4);
+    border-top: 2px solid rgba(var(--mp-white), 0.1);
+    gap: var(--mp-s2);
+}
+
+.username-section {
+    gap: var(--mp-s2);
+    padding-bottom: var(--mp-s4);
+    border-bottom: 2px solid rgba(var(--mp-white), 0.1);
+}
+
 .setting-row {
     display: flex;
     align-items: center;
-    gap: 8px;
-    min-height: 34px;
+    gap: var(--mp-s2);
+    min-height: var(--mp-ctrl-h);
 }
 
-/* 设置标签：固定最小宽度，垂直居中对齐 */
 .setting-row label {
-    min-width: 70px;
-    height: 34px;
+    min-width: 60px;
+    height: var(--mp-ctrl-h);
     display: inline-flex;
     align-items: center;
-    color: var(--SmartThemeFontColor, inherit);
-    font-size: 12px;
-    line-height: 1;
 }
 
-/* ============================
-   输入框
-   ============================ */
-
-/* 统一输入控件样式：主页与设置完全一致（边框/底色/字体/内边距） */
-.multiplayer-panel .input-field,
-.multiplayer-panel .settings-input,
-.multiplayer-panel .chat-input,
-.multiplayer-panel .input-textarea {
-    box-sizing: border-box;
-    border: 1px solid rgba(99, 102, 241, 0.3) !important;
-    border-radius: 8px !important;
-    background: var(--SmartThemeChatColor, rgba(128, 128, 128, 0.15)) !important;
-    color: var(--SmartThemeFontColor, inherit) !important;
-    -webkit-text-fill-color: var(--SmartThemeFontColor, inherit) !important;
-    font-family: inherit;
-    font-size: 13px;
-    line-height: 1.2;
-    padding: 8px 12px;
-    outline: none;
-    box-shadow: none !important;
-    transition: border-color 0.2s, background 0.2s;
-}
-
-/* 各控件尺寸保留 */
-.multiplayer-panel .input-field,
-.multiplayer-panel .settings-input,
-.multiplayer-panel .chat-input {
-    height: 34px;
-}
-
-/* 输入框本体布局属性 */
-.multiplayer-panel .input-field {
-    flex: 1;
-}
-
-/* 聚焦态统一 */
-.multiplayer-panel .input-field:focus,
-.multiplayer-panel .settings-input:focus,
-.multiplayer-panel .chat-input:focus,
-.multiplayer-panel .input-textarea:focus {
-    border-color: rgba(99, 102, 241, 0.6) !important;
-    background: rgba(99, 102, 241, 0.15) !important;
-}
-
-/* 占位符颜色统一为与输入文字同色，不再偏灰 */
-.multiplayer-panel .input-field::placeholder,
-.multiplayer-panel .settings-input::placeholder,
-.multiplayer-panel .chat-input::placeholder,
-.multiplayer-panel .input-textarea::placeholder {
-    color: var(--SmartThemeFontColor, inherit) !important;
-    opacity: 1 !important;
-}
-
-/* 兼容浏览器自动填充导致的白底/黄底 */
-.multiplayer-panel .input-field:-webkit-autofill,
-.multiplayer-panel .input-field:-webkit-autofill:hover,
-.multiplayer-panel .input-field:-webkit-autofill:focus {
-    -webkit-text-fill-color: var(--SmartThemeFontColor, inherit) !important;
-    -webkit-box-shadow: 0 0 0 1000px rgba(20, 20, 30, 0.9) inset !important;
-    box-shadow: 0 0 0 1000px rgba(20, 20, 30, 0.9) inset !important;
-    transition: background-color 9999s ease-out 0s;
-}
-
-/* 中尺寸输入框（密码等） */
-.input-field.medium {
-    min-width: 130px;
-    max-width: 170px;
-}
-
-/* 小尺寸输入框（端口号等） */
-.input-field.small {
-    max-width: 80px;
-}
-
-/* 超小尺寸输入框（人数等） */
-.input-field.tiny {
-    max-width: 60px;
-}
-
-/* ============================
-   在线房间区域
-   ============================ */
-
-/* 房间列表区块 */
-.online-rooms-section {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 8px;
-}
-
-/* 区块头部：标题 + 刷新按钮 */
 .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-/* 刷新按钮 */
-.refresh-btn {
-    width: 28px;
-    height: 28px;
-    border: none;
-    background: var(--SmartThemeChatColor, rgba(128, 128, 128, 0.15)) !important;
-    color: var(--SmartThemeFontColor, inherit) !important;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background 0.2s;
-}
-
-/* 刷新按钮悬停 */
-.refresh-btn:hover:not(:disabled) {
-    background: rgba(99, 102, 241, 0.3);
-}
-
-/* 刷新按钮禁用 */
-.refresh-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* ============================
-   房间列表
-   ============================ */
-
-/* 房间列表容器：限高可滚动 */
-.room-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    max-height: 150px;
-    overflow-y: auto;
-}
-
-/* 单个房间卡片 */
-.room-item {
-    padding: 8px 10px;
-    background: var(--SmartThemeChatColor, rgba(128, 128, 128, 0.15));
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-/* 房间卡片悬停 */
-.room-item:hover {
-    background: rgba(99, 102, 241, 0.15);
-    border-color: rgba(99, 102, 241, 0.6);
-}
-
-/* 房间卡片选中 */
-.room-item.selected {
-    background: rgba(99, 102, 241, 0.3);
-    border-color: rgba(99, 102, 241, 0.8);
-}
-
-/* 房间信息行：名称 + 锁图标 */
-.room-info {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-/* 房间名称 */
-.room-name {
-    font-weight: 500;
-    color: var(--SmartThemeFontColor, inherit);
-}
-
-/* 房间锁图标 */
-.room-lock {
-    font-size: 12px;
-}
-
-/* 房间元信息：人数、创建者 */
-.room-meta {
-    display: flex;
-    gap: 8px;
-    font-size: 9px;
-    color: var(--SmartThemeFontColor, inherit);
-    opacity: 0.8;
-    margin-top: 4px;
-}
-
-/* 空房间提示 */
-.empty-rooms {
-    padding: 16px;
-    text-align: center;
-    color: var(--SmartThemeFontColor, inherit);
-    opacity: 0.8;
-    font-size: 12px;
-    background: var(--SmartThemeChatColor, rgba(128, 128, 128, 0.15));
-    border-radius: 8px;
-}
-
-/* 加入房间区域：密码框 + 按钮 */
 .join-room-section {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 56px 56px;
+    grid-template-columns: minmax(0, 1fr) 60px 60px;
     align-items: center;
-    gap: 8px;
-    margin-top: 4px;
+    gap: var(--mp-s2);
+    margin-top: var(--mp-s1);
+}
+
+.create-room-options {
+    display: flex;
+    gap: var(--mp-s2);
+}
+
+.button-group {
+    display: flex;
+    gap: var(--mp-s2);
+    margin-top: var(--mp-s1);
+}
+
+.chat-input-area {
+    display: flex;
+    gap: var(--mp-s2);
+}
+
+.input-submit-area {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mp-s2);
+    padding: var(--mp-s2);
+    border: 2px solid var(--mp-bd);
+    border-radius: var(--mp-r1);
+    background: var(--mp-bg-surface);
+}
+
+.sync-buttons-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--mp-s2);
+    margin-bottom: var(--mp-s1);
+}
+
+/* =========================================================
+   02) Inputs / 输入控件
+   顺序：子项 -> 状态
+   ========================================================= */
+.multiplayer-panel .input-field,
+.multiplayer-panel .settings-input,
+.multiplayer-panel .chat-input,
+.multiplayer-panel .input-textarea {
+    box-sizing: border-box;
+    border: var(--mp-in-bw) solid var(--mp-bd) !important;
+    border-radius: var(--mp-r1) !important;
+    background: var(--mp-bg-surface) !important;
+    color: var(--mp-text) !important;
+    -webkit-text-fill-color: var(--mp-text) !important;
+    outline: none;
+
+    font-family: var(--mp-in-ff);
+    font-size: var(--mp-in-fs);
+    font-weight: var(--mp-in-fw);
+    padding: var(--mp-in-py) var(--mp-in-px);
+}
+
+.multiplayer-panel .input-field,
+.multiplayer-panel .settings-input,
+.multiplayer-panel .chat-input {
+    height: var(--mp-in-h);
+}
+
+.multiplayer-panel .input-field {
+    flex: 1;
+}
+
+.multiplayer-panel .input-field:focus,
+.multiplayer-panel .settings-input:focus,
+.multiplayer-panel .chat-input:focus,
+.multiplayer-panel .input-textarea:focus {
+    border-color: rgba(var(--mp-brand), 0.6) !important;
+    background: rgba(var(--mp-brand), 0.15) !important;
+}
+
+.input-field.medium {
+    min-width: 120px;
+    max-width: 170px;
+}
+
+.input-field.small {
+    max-width: 80px;
+}
+
+.input-field.tiny {
+    max-width: 60px;
+}
+
+.input-textarea {
+    width: var(--mp-full);
+    min-height: 60px;
+    resize: vertical;
+}
+
+.settings-input {
+    width: var(--mp-full);
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+input[type="number"].settings-input {
+    background: var(--mp-bg-surface) !important;
 }
 
 .join-room-section .input-field {
     min-width: 0;
-    max-width: 100%;
+    max-width: var(--mp-full);
 }
 
+.chat-input {
+    flex: 1;
+}
+
+/* =========================================================
+   03) Buttons / 按钮系统
+   顺序：本体 -> 状态 -> 交互
+   ========================================================= */
+.icon-btn,
+.refresh-btn,
+.action-btn,
+.send-btn,
+.sync-history-btn,
+.transfer-leading-btn {
+    transition: all var(--mp-fast) var(--mp-ease);
+    font-family: var(--mp-btn-ff);
+}
+
+/* 图标按钮 */
+.icon-btn,
+.refresh-btn {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: var(--mp-r1);
+    background: var(--mp-bg-surface) !important;
+    color: var(--mp-text) !important;
+    cursor: pointer;
+}
+
+.icon-btn:hover,
+.refresh-btn:hover:not(:disabled) {
+    background: var(--mp-hover);
+}
+
+.icon-btn.danger-icon:hover {
+    background: var(--mp-hover-danger);
+    color: var(--mp-c-danger);
+}
+
+/* 主按钮 */
+.action-btn,
+.send-btn {
+    border-radius: var(--mp-r1);
+    border: var(--mp-btn-bw) solid transparent;
+    cursor: pointer;
+}
+
+.action-btn {
+    flex: 1;
+    height: var(--mp-btn-h);
+    min-width: var(--mp-btn-minw);
+    padding: var(--mp-btn-py) var(--mp-btn-px);
+    font-size: var(--mp-btn-fs);
+    font-weight: var(--mp-btn-fw);
+    color: var(--mp-text);
+}
+
+.action-btn.primary,
+.send-btn {
+    background: rgba(var(--mp-brand), 0.6);
+    border-color: rgba(var(--mp-brand), 0.8);
+    color: var(--mp-text);
+}
+
+.action-btn.secondary {
+    background: var(--mp-bg-surface);
+    border-color: rgba(var(--mp-brand), 0.4);
+    color: var(--mp-text);
+}
+
+.action-btn.primary:hover:not(:disabled),
+.send-btn:hover:not(:disabled) {
+    background: rgba(var(--mp-brand), 0.8);
+}
+
+.action-btn.secondary:hover:not(:disabled) {
+    background: var(--mp-hover);
+}
+
+/* 创建并加入按钮独立尺寸 */
+.create-room-section .action-btn {
+    height: var(--mp-ch);
+    font-size: var(--mp-cf);
+    padding: var(--mp-btn-py) var(--mp-cpx);
+}
+
+/* Join 行按钮 */
 .join-room-section .action-btn {
-    height: 34px;
-    min-width: 56px;
-    padding: 0 6px;
+    height: var(--mp-btn-h);
+    min-width: var(--mp-btn-minw);
+    padding: 0 var(--mp-s2);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: var(--mp-s2);
+    font-size: var(--mp-btn-fs);
+    font-weight: var(--mp-btn-fw);
     white-space: nowrap;
-    word-break: keep-all;
-    writing-mode: horizontal-tb;
-    text-orientation: mixed;
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.2px;
 }
 
 .join-room-section .join-btn-icon.fa-solid {
-    font-size: 12px;
+    font-size: var(--mp-ic);
     line-height: 1;
 }
 
 .join-room-section .join-btn-label {
     line-height: 1;
-    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 100%;
 }
 
-/* ============================
-   创建房间区域
-   ============================ */
-
-/* 创建房间区块：顶部分割线 */
-.create-room-section {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+/* 发送按钮 */
+.send-btn {
+    padding: var(--mp-btn-py) var(--mp-btn-px);
+    font-size: var(--mp-f3);
+    font-weight: var(--mp-w2);
 }
 
-/* 创建选项行：密码 + 人数并排 */
-.create-room-options {
-    display: flex;
-    gap: 8px;
-}
-
-/* ============================
-   分割线与复选框
-   ============================ */
-
-/* 设置分割线 */
-.settings-divider {
-    border: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    margin: 8px 0;
-}
-
-/* ============================
-   按钮组
-   ============================ */
-
-/* 按钮组容器 */
-.button-group {
-    display: flex;
-    gap: 8px;
-    margin-top: 4px;
-}
-
-/* 通用操作按钮 */
-.action-btn {
-    flex: 1;
-    padding: 5px 10px;
-    border: none;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 500;
+/* 同步按钮 */
+.sync-history-btn {
+    padding: 2px 4px;
+    border-radius: var(--mp-r1);
+    border: var(--mp-btn-bw) solid rgba(var(--mp-brand), 0.5);
+    background: rgba(var(--mp-brand), 0.2);
+    color: var(--mp-text);
     cursor: pointer;
-    transition: all 0.2s;
+    font-size: var(--mp-sm-fs);
+    font-weight: var(--mp-sm-fw) !important;
 }
 
-/* 主要按钮：靛蓝背景 + 文字阴影 */
-.action-btn.primary {
-    background: rgba(99, 102, 241, 0.6);
-    border: 1px solid rgba(99, 102, 241, 0.8);
-    color: var(--SmartThemeFontColor, #fff);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+.sync-history-btn:hover {
+    background: rgba(var(--mp-brand), 0.4);
+    border-color: var(--mp-bd-strong);
 }
 
-/* 主要按钮悬停：加深 + 微上浮 */
-.action-btn.primary:hover:not(:disabled) {
-    background: rgba(99, 102, 241, 0.8);
-    transform: translateY(-1px);
+/* 转让房主按钮 */
+.transfer-leading-btn {
+    width: 14px;
+    min-width: 14px;
+    height: 14px;
+    padding: 0;
+    border: none;
+    border-radius: var(--mp-rr);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: var(--mp-c-host);
+    font-size: var(--mp-f1);
+    cursor: pointer;
 }
 
-/* 次要按钮：透明背景 + 靛蓝边框 */
-.action-btn.secondary {
-    background: var(--SmartThemeChatColor, rgba(128, 128, 128, 0.15));
-    color: var(--SmartThemeFontColor, inherit);
-    border: 1px solid rgba(99, 102, 241, 0.4);
+.transfer-leading-btn:hover {
+    color: var(--mp-c-crown-hover);
+    background: rgba(var(--mp-host), 0.15);
 }
 
-/* 次要按钮悬停 */
-.action-btn.secondary:hover:not(:disabled) {
-    background: rgba(99, 102, 241, 0.3);
-}
-
-/* 危险按钮：红色系 */
-.action-btn.danger {
-    background: rgba(239, 68, 68, 0.2);
-    color: #f87171;
-}
-
-/* 危险按钮悬停 */
-.action-btn.danger:hover {
-    background: rgba(239, 68, 68, 0.3);
-}
-
-/* 按钮禁用状态 */
-.action-btn:disabled {
+/* 禁用态 */
+.action-btn:disabled,
+.send-btn:disabled,
+.refresh-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-/* ============================
-   用户列表区域
-   ============================ */
+/* =========================================================
+   04) Lists / 列表与文本
+   顺序：容器 -> 子项 -> 状态 -> 空态
+   ========================================================= */
+/* 滚动条统一 */
+.panel-content,
+.settings-modal-body,
+.chat-logs,
+.room-list,
+.pending-inputs {
+    scrollbar-width: thin;
+    scrollbar-color: var(--mp-scroll) transparent !important;
+}
 
-/* 用户列表容器：不允许收缩 */
-.user-list {
+.panel-content::-webkit-scrollbar,
+.settings-modal-body::-webkit-scrollbar,
+.chat-logs::-webkit-scrollbar,
+.room-list::-webkit-scrollbar,
+.pending-inputs::-webkit-scrollbar {
+    width: 4px;
+}
+
+.panel-content::-webkit-scrollbar-thumb,
+.settings-modal-body::-webkit-scrollbar-thumb,
+.chat-logs::-webkit-scrollbar-thumb,
+.room-list::-webkit-scrollbar-thumb,
+.pending-inputs::-webkit-scrollbar-thumb {
+    background: var(--mp-scroll) !important;
+    border-radius: var(--mp-rp);
+}
+
+/* 小字体统一入口 */
+.setting-row label,
+.room-meta,
+.empty-rooms,
+.host-badge,
+.all-submitted,
+.log-time,
+.pending-input-item,
+.empty-inputs,
+.empty-logs,
+.hint,
+.preview-label,
+.preview-text,
+.sync-history-btn {
+    font-family: var(--mp-sm-ff);
+    font-size: var(--mp-sm-fs);
+    font-weight: var(--mp-sm-fw);
+}
+
+/* 标题统一入口 */
+.section-title {
+    margin-bottom: var(--mp-s1);
+    font-size: var(--mp-t-fs);
+    font-weight: var(--mp-t-fw);
+    letter-spacing: var(--mp-t-ls);
+    text-transform: var(--mp-t-tt);
+    color: var(--mp-title-c);
+}
+
+/* 图标统一入口 */
+.icon-btn.fa-solid,
+.refresh-btn.fa-solid,
+.join-btn-icon.fa-solid,
+.transfer-leading-btn.fa-solid,
+.user-leading-icon.fa-solid,
+.send-btn.fa-solid,
+.sync-history-btn.fa-solid,
+.action-btn.fa-solid,
+.section-title.fa-solid {
+    font-family: "Font Awesome 6 Free", "Font Awesome 5 Free" !important;
+    font-weight: 900 !important;
+    font-size: var(--mp-ic);
+    line-height: 1;
+}
+
+/* 状态点 */
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: var(--mp-rr);
+    background: var(--mp-c-gray-1);
+}
+
+.status-dot.connected {
+    background: var(--mp-c-ok);
+    box-shadow: 0 0 10px rgba(var(--mp-ok), 1);
+}
+
+.status-dot.connecting {
+    background: var(--mp-c-warn);
+    animation: mp-pulse 1s infinite;
+}
+
+/* 房间列表 */
+.room-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mp-s2);
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.room-item,
+.empty-rooms {
+    border-radius: var(--mp-r1);
+    background: var(--mp-bg-surface);
+}
+
+.room-item {
+    border: 2px solid var(--mp-bd);
+    padding: 4px 10px;
+    cursor: pointer;
+}
+
+.room-item:hover {
+    background: var(--mp-hover-soft);
+    border-color: rgba(var(--mp-brand), 0.6);
+}
+
+.room-item.selected {
+    background: var(--mp-hover);
+    border-color: var(--mp-bd-strong);
+}
+
+.room-info,
+.room-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--mp-s2);
+}
+
+.room-meta {
+    margin-top: var(--mp-s1);
+    opacity: var(--mp-sm-op);
+}
+
+.empty-rooms {
+    padding: var(--mp-s6);
+    text-align: center;
+    opacity: var(--mp-sm-op);
+}
+
+/* 用户列表 */
+.user-list,
+.spectator-list {
     flex-shrink: 0;
 }
 
-/* 区块标题：小号灰色大写字母 */
-.section-title {
-    font-size: 11px;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 2px;
+.user-list .section-title,
+.spectator-list .section-title {
+    margin-bottom: var(--mp-s2);
 }
 
-/* 用户标签容器：自动换行 */
-.user-items {
+.user-items,
+.spectator-items {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: var(--mp-s2);
 }
 
-/* 胶囊基础规格（观众通过复用 user-item 获得完全一致结构） */
 .user-item {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
-    min-width: 88px;
-    min-height: 28px;
-    max-width: 100%;
-    box-sizing: border-box;
+    gap: var(--mp-s2);
+    min-width: 60px;
+    max-width: 100px;
+    height: 30px;
     padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    line-height: 1;
+    border-radius: var(--mp-r2);
+    border: 2px solid rgba(var(--mp-white), 0.25);
+    background: var(--mp-bg-surface);
+    font-size: var(--mp-f1);
     white-space: nowrap;
+    overflow: hidden;
 }
 
-/* 玩家默认配色 */
-.user-item {
-    background: var(--SmartThemeChatColor, rgba(128, 128, 128, 0.15));
-    border: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.3));
-}
-
-/* 房主标签：金色边框 + 背景 */
 .user-item.host {
-    background: rgba(251, 191, 36, 0.15);
-    border: 1px solid rgba(251, 191, 36, 0.8);
+    background: rgba(var(--mp-host), 0.15);
+    border-color: rgba(var(--mp-host), 0.8);
 }
 
-/* 已提交输入状态：绿色系 */
 .user-item.submitted {
-    background: rgba(74, 222, 128, 0.15);
-    border-color: rgba(74, 222, 128, 0.6);
-}
-
-/* 用户头像：圆形渐变背景 */
-.user-avatar {
-    width: 20px;
-    height: 20px;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    font-weight: 600;
-    color: #fff;
-}
-
-/* 已提交用户头像：绿色渐变覆盖 */
-.user-avatar.avatar-submitted {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-}
-
-/* 用户名文字 */
-.user-name {
-    color: var(--SmartThemeFontColor, inherit);
-}
-
-/* 房主皇冠图标 */
-.host-crown {
-    font-size: 12px;
-}
-
-/* 房主徽章文字 */
-.host-badge {
-    font-size: 10px;
-    color: #fbbf24;
-    margin-left: 8px;
-}
-
-/* 全部已提交提示 */
-.all-submitted {
-    color: #4ade80;
-    font-size: 10px;
-    margin-left: 8px;
-}
-
-/* ============================
-   同步按钮行
-   ============================ */
-
-/* 同步按钮容器：自动换行 */
-.sync-buttons-row {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-    margin-bottom: 2px;
-}
-
-/* 同步历史按钮：靛蓝半透明风格 */
-.sync-history-btn {
-    padding: 3px 7px;
-    border: 1px solid rgba(99, 102, 241, 0.5);
-    background: rgba(99, 102, 241, 0.2);
-    color: var(--SmartThemeFontColor, inherit);
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: normal !important;
-    font-family: "Font Awesome 6 Free", "SimHei", "Heiti SC", sans-serif !important;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-/* 同步按钮悬停 */
-.sync-history-btn:hover {
-    background: rgba(99, 102, 241, 0.4);
-    border-color: rgba(99, 102, 241, 0.8);
-}
-
-/* 转让房主按钮：小圆形 */
-.transfer-btn {
-    width: 18px;
-    height: 18px;
-    padding: 0;
-    margin-left: auto;
-    border: none;
-    background: rgba(255, 255, 255, 0.15);
-    color: #fff;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s;
-}
-
-/* 转让按钮悬停 */
-.transfer-btn:hover {
-    background: rgba(100, 100, 255, 0.4);
-}
-
-/* 观众列表区域 */
-.spectator-list {
-    flex-shrink: 0;
-    margin-top: 2px;
-}
-
-.spectator-items {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: stretch;
-    gap: 6px;
+    background: rgba(var(--mp-ok), 0.15);
+    border-color: rgba(var(--mp-ok), 0.6);
 }
 
 .user-item.spectator-item {
-    background: rgba(56, 189, 248, 0.12);
-    border: 1px solid rgba(56, 189, 248, 0.45);
+    background: rgba(var(--mp-spec), 0.12);
+    border-color: rgba(var(--mp-spec), 0.45);
 }
 
-.user-item.spectator-item .user-avatar {
-    background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+.user-leading-icon {
+    width: 14px;
+    min-width: 14px;
+    text-align: center;
+    font-size: var(--mp-f1);
+    opacity: 0.9;
 }
 
-/* ============================
-   聊天日志区域
-   ============================ */
+.user-leading-icon.host-crown {
+    color: var(--mp-c-host);
+    opacity: 1;
+}
 
-/* 日志容器：限高可滚动，自定义滚动条 */
+.user-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.host-badge {
+    margin-left: var(--mp-s2);
+    color: var(--mp-c-host);
+}
+
+.all-submitted {
+    margin-left: var(--mp-s2);
+    color: var(--mp-c-ok);
+}
+
+/* 聊天日志 */
 .chat-logs {
     flex: 1;
-    min-height: 80px;
-    max-height: 120px;
+    min-height: var(--mp-chat-min-h);
+    max-height: var(--mp-chat-max-h);
     overflow-y: auto;
-    padding: 6px;
-    background: var(--SmartThemeChatColor, rgba(128, 128, 128, 0.15)) !important;
-    /* 兜底叠层：在浅色主题下也保证有一点对比度 */
-    box-shadow: inset 0 0 0 9999px rgba(20, 20, 30, 0.08);
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    border-radius: 8px;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(99, 102, 241, 0.5) transparent !important;
+    padding: var(--mp-s2);
+    border: 2px solid var(--mp-bd);
+    border-radius: var(--mp-r1);
+    background: var(--mp-bg-surface) !important;
 }
 
-/* Webkit 滚动条宽度（聊天日志 / 设置弹窗共用） */
-.chat-logs::-webkit-scrollbar,
-.settings-modal-body::-webkit-scrollbar {
-    width: 6px;
-}
-
-/* Webkit 滚动条轨道：透明 */
-.chat-logs::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-/* Webkit 滚动条滑块：靛蓝圆角 */
-.chat-logs::-webkit-scrollbar-thumb {
-    background: rgba(99, 102, 241, 0.5);
-    border-radius: 3px;
-}
-
-/* 单条日志：允许长单词换行 */
 .log-item {
-    padding: 4px 0;
+    padding: 2px 0;
     line-height: 1.4;
     word-break: break-word;
-    color: var(--SmartThemeFontColor, #e0e0e0);
+    color: var(--mp-text);
 }
 
-/* 系统消息：半透明小字 */
-.log-item.system {
-    color: var(--SmartThemeFontColor, #888);
-    opacity: 0.8;
-    font-size: 11px;
-}
-
-/* 聊天消息 */
 .log-item.chat {
-    /* 优先正文色，避免浅色主题下字体过亮 */
-    color: var(--SmartThemeBodyColor, var(--SmartThemeEmColor, #1f2937)) !important;
+    color: var(--mp-text-body) !important;
 }
 
-/* 错误消息：红色 */
 .log-item.error {
-    color: #f87171;
+    color: var(--mp-c-red-soft);
 }
 
-/* AI 消息：紫色，适配酒馆 Bot 颜色变量 */
-.log-item.ai {
-    color: var(--SmartThemeBotColor, #a78bfa);
-}
-
-/* 日志时间戳 */
 .log-time {
-    color: var(--SmartThemeFontColor, #888);
-    font-size: 10px;
-    margin-right: 6px;
+    margin-right: var(--mp-s2);
+    opacity: var(--mp-sm-op);
 }
 
-/* 日志发送者名称 */
 .log-from {
-    font-weight: 500;
-    margin-right: 4px;
-}
-
-/* 日志正文内容 */
-.log-content {
-    color: inherit;
+    margin-right: var(--mp-s1);
+    font-weight: var(--mp-w2);
 }
 
 .log-item.chat .log-from,
 .log-item.chat .log-content {
-    color: inherit !important;
-    opacity: 1;
-    font-weight: 500;
+    font-weight: var(--mp-w2);
 }
 
-/* 空日志占位提示 */
 .empty-logs {
+    padding: var(--mp-s6);
     text-align: center;
-    color: var(--SmartThemeFontColor, #888);
-    padding: 20px;
-    font-size: 12px;
 }
 
-/* ============================
-   聊天输入区
-   ============================ */
-
-/* 输入区容器：输入框 + 发送按钮水平排列 */
-.chat-input-area {
-    display: flex;
-    gap: 8px;
-}
-
-/* 聊天输入框：仅保留布局，视觉走统一输入样式 */
-.chat-input {
-    flex: 1;
-}
-
-/* 发送按钮：靛蓝背景 + 文字阴影 */
-.send-btn {
-    padding: 8px 12px;
-    background: rgba(99, 102, 241, 0.6);
-    border: 1px solid rgba(99, 102, 241, 0.8);
-    border-radius: 8px;
-    color: var(--SmartThemeFontColor, #fff);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-/* 发送按钮悬停 */
-.send-btn:hover:not(:disabled) {
-    background: rgba(99, 102, 241, 0.8);
-}
-
-/* 发送按钮禁用 */
-.send-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* 小号发送按钮（图标按钮用） */
-.send-btn.small {
-    font-size: 14px;
-}
-
-/* ============================
-   输入提交区 & 房主控制区
-   ============================ */
-
-/* 输入提交区 */
-.input-submit-area {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 10px;
-    background: var(--SmartThemeChatColor, rgba(128, 128, 128, 0.15));
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    border-radius: 8px;
-}
-
-/* 多行输入框：保留结构行为，视觉走统一输入样式 */
-.input-textarea {
-    width: 100%;
-    resize: vertical;
-    min-height: 60px;
-}
-
-/* 待处理输入列表容器：暗色背景，限高可滚动 */
+/* 输入池 */
 .pending-inputs {
     max-height: 100px;
     overflow-y: auto;
-    padding: 8px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 6px;
+    padding: var(--mp-s2);
+    border-radius: var(--mp-r1);
+    background: rgba(var(--mp-shadow), 0.2);
 }
 
-/* 单条待处理输入：底部细分割线 */
 .pending-input-item {
-    padding: 4px 0;
-    font-size: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 2px 0;
+    border-bottom: 2px solid rgba(var(--mp-white), 0.05);
 }
 
-/* 最后一条待处理输入：去掉底部分割线 */
 .pending-input-item:last-child {
     border-bottom: none;
 }
 
-/* 输入者用户名：紫色加粗 */
 .input-user {
-    color: #a78bfa;
-    font-weight: 500;
-    margin-right: 6px;
+    margin-right: var(--mp-s2);
+    font-weight: var(--mp-w2);
+    color: var(--mp-c-violet);
 }
 
-/* 输入内容文字 */
 .input-content {
-    color: #ccc;
+    color: var(--mp-c-gray-3);
 }
 
-/* 空输入占位提示 */
 .empty-inputs {
+    padding: var(--mp-s2);
     text-align: center;
-    color: #555;
-    font-size: 12px;
-    padding: 12px;
+    color: var(--mp-c-gray-2);
 }
 
-/* ============================
-   设置弹窗
-   ============================ */
-
-/* 弹窗遮罩层：覆盖整个面板（含标题栏），居中内容 */
-.settings-modal {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: transparent;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
-    border-radius: 16px;
-}
-
-/* 弹窗内容容器：不透明背景完全遮盖下层 */
+/* =========================================================
+   05) Modal / 设置面板
+   顺序：容器 -> 子项 -> 状态
+   ========================================================= */
+.settings-modal,
 .settings-modal-content {
-    background: var(--SmartThemeBlurTintColor, rgba(30, 30, 45, 0.98)) !important;
-    backdrop-filter: var(--SmartThemeBlur, blur(12px));
-    border-radius: 16px;
-    border: 1px solid rgba(99, 102, 241, 0.5) !important;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-/* 弹窗头部：靛蓝背景 + 底部分割线 */
-.settings-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    background: rgba(99, 102, 241, 0.3);
-    border-bottom: 1px solid rgba(99, 102, 241, 0.5);
-    font-weight: 600;
-    color: var(--SmartThemeFontColor, inherit);
-}
-
-/* 弹窗主体：可滚动，自定义滚动条 */
-.settings-modal-body {
-    padding: 16px;
+    width: var(--mp-full);
     flex: 1;
     min-height: 0;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(99, 102, 241, 0.5) transparent !important;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Webkit 滚动条轨道：透明 */
-.settings-modal-body::-webkit-scrollbar-track {
-    background: transparent !important;
+/* 层级说明：跟随 .multiplayer-panel z-index，不再额外叠高 */
+.settings-modal-content {
+    overflow: hidden;
+    border: 2px solid var(--mp-bd-strong) !important;
+    background: var(--mp-bg-panel) !important;
+    backdrop-filter: var(--SmartThemeBlur, blur(10px));
 }
 
-/* Webkit 滚动条滑块：靛蓝圆角 */
-.settings-modal-body::-webkit-scrollbar-thumb {
-    background: rgba(99, 102, 241, 0.5) !important;
-    border-radius: 3px;
+.settings-modal-body {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: var(--mp-s4);
 }
 
-/* 单个设置项：块级显示 */
 .setting-item {
     display: block;
-    font-size: 12px;
-    color: var(--SmartThemeFontColor, inherit) !important;
+    font-size: var(--mp-f1);
+    color: var(--mp-text) !important;
 }
 
-/* 通用标题与输入间距（参考“消息前缀”） */
 .settings-modal-body .setting-item > label {
     display: block;
-    margin-bottom: 6px;
-    line-height: 1.2;
+    margin-bottom: var(--mp-s2);
+    font-family: var(--mp-ffm);
+    font-size: var(--mp-f2);
+    font-weight: var(--mp-w2);
+    color: var(--mp-text);
 }
 
-/* 保持输入框独占一行，和标题形成稳定间距 */
-.settings-modal-body .setting-item > .settings-input {
-    display: block;
-}
-
-/* 数字类型设置输入框：强制背景色 */
-input[type="number"].settings-input {
-    background: var(--SmartThemeChatColor, rgba(128, 128, 128, 0.15)) !important;
-}
-
-/* 设置输入框：保留结构属性，其余视觉由统一输入样式接管 */
-.settings-input {
-    width: 100%;
-    -webkit-appearance: none;
-    appearance: none;
-}
-
-/* 设置输入框聚焦：保持与统一输入样式一致（不额外加外发光） */
-.settings-input:focus {
-    box-shadow: none !important;
-}
-
-/* 下拉选项样式：适配暗色主题 */
-.settings-input option {
-    background: var(--SmartThemeBlurTintColor, #1e1e2e);
-    color: var(--SmartThemeFontColor, inherit);
-}
-
-/* 提示文字：小号半透明 */
 .hint {
     display: block;
-    font-size: 10px;
-    color: var(--SmartThemeFontColor, inherit);
+    margin-top: var(--mp-s2);
     opacity: 0.6;
-    margin-top: 4px;
 }
 
-/* 预览框：灰色背景圆角卡片 */
 .preview-box {
-    background: var(--SmartThemeChatColor, rgba(128, 128, 128, 0.15));
-    border-radius: 6px;
-    padding: 10px;
-    margin-top: 8px;
+    margin-top: var(--mp-s2);
+    padding: var(--mp-s4);
+    border-radius: var(--mp-r1);
+    background: var(--mp-bg-surface);
 }
 
-/* 预览标签 */
 .preview-label {
-    font-size: 11px;
-    color: var(--SmartThemeFontColor, inherit);
+    margin-right: var(--mp-s2);
     opacity: 0.8;
-    margin-right: 8px;
 }
 
-/* 预览文字：斜体 */
 .preview-text {
-    font-size: 12px;
-    color: var(--SmartThemeFontColor, inherit);
     font-style: italic;
 }
 
-/* ============================
-   开关组件
-   ============================ */
-
-/* 开关设置项：底部间距 */
 .toggle-item {
-    margin-bottom: 16px;
+    margin-bottom: var(--mp-s6);
 }
 
-/* 开关标签：水平排列，可点击 */
 .toggle-label {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--mp-s4);
     cursor: pointer;
-    font-size: 12px;
-    color: var(--SmartThemeFontColor, inherit);
+    font-size: var(--mp-f2);
+    font-weight: var(--mp-w2);
+    color: var(--mp-text);
 }
 
-/* 开关轨道：圆角矩形，灰色默认 */
 .toggle-switch {
-    display: inline-block;
     position: relative;
+    display: inline-block;
     width: 40px;
     height: 20px;
-    background: rgba(255, 255, 255, 0.2);
     border-radius: 10px;
-    transition: background 0.3s;
+    background: rgba(var(--mp-white), 0.2);
 }
 
-/* 开关滑块：白色圆形，绝对定位 */
 .toggle-switch::after {
-    content: '';
+    content: "";
     position: absolute;
     top: 2px;
     left: 2px;
-    width: 16px;
-    height: 16px;
-    background: #fff;
-    border-radius: 50%;
-    transition: transform 0.3s;
+    width: 14px;
+    height: 14px;
+    border-radius: var(--mp-rr);
+    background: var(--mp-c-white);
+    transition: transform var(--mp-mid) var(--mp-ease);
 }
 
-/* 选中状态：轨道变绿（active class 写法） */
 .toggle-switch.active {
-    background: #4ade80 !important;
+    background: var(--mp-c-ok) !important;
 }
 
-/* 选中状态：滑块右移（active class 写法） */
 .toggle-switch.active::after {
     transform: translateX(20px) !important;
 }
 
-/* ============================
-   隐藏内容
-   ============================ */
+/* =========================================================
+   06) Utilities / 状态、动效、辅助
+   ========================================================= */
+@keyframes mp-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
 
-/* 隐藏内容文字：灰色斜体，用于"已提交"等脱敏显示 */
+    50% {
+        opacity: 0.5;
+    }
+}
+
 .hidden-content {
-    color: #888;
+    color: var(--mp-text);
     font-style: italic;
 }
 
-/* ============================
-   剧透遮罩（Spoiler）
-   ============================ */
-
-/* 遮罩默认状态：灰色背景遮住文字，文字透明不可见 */
 .mp-spoiler {
-    background-color: #4a4a4a;
-    color: transparent;
+    padding: 0 var(--mp-s2);
+    border-radius: var(--mp-r1);
     cursor: pointer;
-    border-radius: 3px;
-    padding: 0 4px;
-    transition: all 0.2s ease;
     user-select: none;
+    color: transparent;
+    background: var(--mp-c-spoiler);
 }
 
-/* 遮罩悬停：背景微亮，提示可点击 */
 .mp-spoiler:hover {
-    background-color: #5a5a5a;
+    background: var(--mp-c-spoiler-h);
 }
 
-/* 遮罩已揭示：背景透明，文字恢复，可选中 */
 .mp-spoiler.revealed {
-    background-color: transparent;
     color: inherit;
     cursor: text;
     user-select: auto;
+    background: transparent;
+}
+
+.toggle-switch.active::after {
+    transform: translateX(20px) !important;
+}
+
+/* ==============================
+   P) 文本隐藏与剧透
+   ============================== */
+.hidden-content {
+    color: var(--mp-text);
+    font-style: italic;
+}
+
+.mp-spoiler {
+    padding: 0 var(--mp-s4);
+    border-radius: var(--mp-r1);
+    cursor: pointer;
+    user-select: none;
+    color: transparent;
+    background: #4a4a4a;
+}
+
+.mp-spoiler:hover {
+    background: #5a5a5a;
+}
+
+.mp-spoiler.revealed {
+    color: inherit;
+    cursor: text;
+    user-select: auto;
+    background: transparent;
 }
 
     `;
+
     targetDoc.head.appendChild(style);
 };
 
-
 // ==========================================
-// 2. 大厅 API 服务 (RoomApiService)
+// 2. 大厅 API 服务 
 // ==========================================
 const requestWithTimeout = async (url, options = {}, timeoutMs = 8000) => {
     const controller = new AbortController();
@@ -1307,14 +1209,23 @@ const RoomApiService = {
             body: JSON.stringify({ password })
         }, 8000);
 
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || '加入房间失败');
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            const err = new Error(
+                data.error ||
+                (response.status === 404 ? '房间不存在或已关闭' : '加入房间失败')
+            );
+            err.status = response.status;
+            err.code = 'ROOM_JOIN_FAILED';
+            throw err;
+        }
+
         return `${baseUrl.replace('http', 'ws')}/ws/room/${roomId}`;
     }
 };
 
 // ==========================================
-// 3. 网络通信模块 (WebSocket & LocalChannel)
+// 3. 网络通信模块
 // ==========================================
 const generateId = () => Math.random().toString(36).substring(2, 10); // 生成随机用户ID
 
@@ -1596,16 +1507,20 @@ class LocalChannelClient {
 }
 
 // ==========================================
-// 4. 状态管理器 (Pinia Store)
+// 4. 状态管理器
 // ==========================================
+
 const useMultiplayerStore = defineStore('multiplayer', () => {
     const isConnected = ref(false);
     const mode = ref('disconnected');
     const isHost = ref(false);
+
     const users = ref([]);
     const chatLogs = ref([]);
+
     const pendingInputs = shallowRef(new Map());
     const pendingInputsVersion = ref(0);
+
     const pendingPersonas = shallowRef(new Map());
     const acuSyncState = ref({ fullSynced: false, lastSyncTimestamp: 0, isolationKey: '' });
 
@@ -1618,73 +1533,6 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
         return (hiddenRerollContext.value || '').toString().trim();
     };
 
-    const ROOM_LOGS_KEY = 'st_multiplayer_room_logs_v1';
-    const NO_ROOM_KEY = '__no_room__';
-    const currentRoomId = ref('');
-
-    const normalizeRoomKey = (roomId = '') => {
-        const raw = (roomId || '').toString().trim().toLowerCase();
-        return raw || NO_ROOM_KEY;
-    };
-
-    const loadRoomLogs = () => {
-        try {
-            const raw = localStorage.getItem(ROOM_LOGS_KEY);
-            const parsed = raw ? JSON.parse(raw) : {};
-            return parsed && typeof parsed === 'object' ? parsed : {};
-        } catch (e) {
-            return {};
-        }
-    };
-
-    const roomLogsMap = ref(loadRoomLogs());
-
-    const persistRoomLogs = () => {
-        try {
-            localStorage.setItem(ROOM_LOGS_KEY, JSON.stringify(roomLogsMap.value));
-        } catch (e) {}
-    };
-
-    const switchRoomLogs = (roomId = '') => {
-        currentRoomId.value = (roomId || '').toString().trim();
-        const key = normalizeRoomKey(currentRoomId.value);
-        if (!Array.isArray(roomLogsMap.value[key])) {
-            roomLogsMap.value[key] = [];
-            persistRoomLogs();
-        }
-        chatLogs.value = [...roomLogsMap.value[key]];
-    };
-
-    const pruneRoomLogsByExistingRoomIds = (roomIds = []) => {
-        const keepKeys = new Set(roomIds.map(id => normalizeRoomKey(id)));
-        const next = {};
-
-        for (const [key, logs] of Object.entries(roomLogsMap.value || {})) {
-            if (key === NO_ROOM_KEY || keepKeys.has(key)) {
-                next[key] = Array.isArray(logs) ? logs : [];
-            }
-        }
-
-        roomLogsMap.value = next;
-        persistRoomLogs();
-
-        const currentKey = normalizeRoomKey(currentRoomId.value);
-        if (currentKey !== NO_ROOM_KEY && !keepKeys.has(currentKey)) {
-            currentRoomId.value = '';
-            chatLogs.value = [];
-        } else if (currentRoomId.value) {
-            chatLogs.value = [...(roomLogsMap.value[currentKey] || [])];
-        }
-    };
-
-    // 变量模式（需跨组件/跨模块访问，必须放在 store 中）
-    const _VM_KEY = 'st_multiplayer_variable_mode';
-    const variableMode = ref(localStorage.getItem(_VM_KEY) || 'none');
-    watch(variableMode, (v) => { localStorage.setItem(_VM_KEY, v); });
-
-    const spectatorMode = ref(false);
-
-    // 连接相关设置（作为运行时统一来源）
     const settings = reactive({
         onlineMode: true,
         onlineServer: 'https://room.yufugemini.cloud',
@@ -1692,8 +1540,21 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
         timedInputSeconds: 0
     });
 
+    // 变量模式（需跨组件/跨模块访问，必须放在 store 中）
+    const _VM_KEY = 'st_multiplayer_variable_mode';
+    const variableMode = ref(localStorage.getItem(_VM_KEY) || 'none');
+    watch(variableMode, (v) => {
+        localStorage.setItem(_VM_KEY, v);
+    });
+
+    const spectatorMode = ref(false);
+
     let networkClient = null;
     let userJoinOrderSeed = 0;
+
+    // 房主限时发送计时器
+    let timeoutTimer = null;
+    let lastPendingSize = 0;
 
     // 自动重连状态
     let reconnectTimer = null;
@@ -1702,45 +1563,20 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
     let reconnectContext = null;
     let sessionEstablished = false;
     let manualDisconnect = false;
-    let isReconnecting = false;
 
-    const clearReconnectTimer = () => {
-        if (reconnectTimer) {
-            clearTimeout(reconnectTimer);
-            reconnectTimer = null;
-        }
-    };
+    const NO_ROOM_KEY = '__no_room__';
+    const currentRoomId = ref('');
+    const MAX_CHAT_LOGS = 50;
 
-    const scheduleReconnect = () => {
-        if (manualDisconnect || !reconnectContext || reconnectTimer || isConnected.value) return;
+    // 仅会话内存日志，不做本地持久化
+    const roomLogsMap = ref({});
+    const errorLogDedupSet = new Set();
 
-        const idx = Math.min(reconnectAttempt, reconnectDelays.length - 1);
-        const delay = reconnectDelays[idx];
-        reconnectAttempt++;
-
-        addLog('system', '系统', `连接断开，${delay / 1000}s 后自动重连（第 ${reconnectAttempt} 次）`);
-
-        reconnectTimer = setTimeout(async () => {
-            reconnectTimer = null;
-            if (manualDisconnect || isConnected.value || !reconnectContext) return;
-
-            try {
-                isReconnecting = true;
-                await connectOnline(
-                    reconnectContext.roomId,
-                    reconnectContext.pwd,
-                    reconnectContext.name,
-                    reconnectContext.uid,
-                    { isReconnect: true }
-                );
-            } catch (e) {
-                scheduleReconnect();
-            }
-        }, delay);
-    };
-
+    // -------------------------
+    // 工具函数
+    // -------------------------
+    const normalizeRoomKey = (roomId = '') => ((roomId || '').toString().trim().toLowerCase() || NO_ROOM_KEY);
     const normalizeUserName = (name = '') => name.trim().toLowerCase();
-
     const normalizeUid = (uid = '') => uid.toString().trim().toLowerCase();
 
     const makeBoundUserId = (roomId, uid) => {
@@ -1760,14 +1596,11 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
             Object.prototype.hasOwnProperty.call(user, 'is_observer') ||
             Object.prototype.hasOwnProperty.call(user, 'observer');
 
-        const isHost = !!(user.isHost ?? user.host ?? false);
-        const isSpectator = !!(user.isSpectator ?? user.spectator ?? user.is_observer ?? user.observer ?? false);
-
         return {
             id: user.id,
             name: user.name || user.fromName || '匿名',
-            isHost,
-            isSpectator,
+            isHost: !!(user.isHost ?? user.host ?? false),
+            isSpectator: !!(user.isSpectator ?? user.spectator ?? user.is_observer ?? user.observer ?? false),
             hasHostField,
             hasSpectatorField
         };
@@ -1781,11 +1614,22 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
     const clearPendingInputs = () => {
         pendingInputs.value.clear();
         touchPendingInputs();
-
         if (timeoutTimer) {
             clearTimeout(timeoutTimer);
             timeoutTimer = null;
         }
+    };
+
+    const getJoinOrder = (u, idx = 0) => Number.isFinite(u?._joinOrder) ? u._joinOrder : (idx + 1);
+
+    const buildUsersSnapshot = () => {
+        return users.value.map((u, idx) => ({
+            id: u.id,
+            name: u.name || '匿名',
+            isHost: !!u.isHost,
+            isSpectator: !!u.isSpectator,
+            _joinOrder: getJoinOrder(u, idx)
+        }));
     };
 
     const buildPendingInputsSnapshot = () => {
@@ -1806,53 +1650,273 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
             });
     };
 
-    const buildUsersSnapshot = () => {
-        return users.value.map((u, idx) => ({
-            id: u.id,
-            name: u.name || '匿名',
-            isHost: !!u.isHost,
-            isSpectator: !!u.isSpectator,
-            _joinOrder: Number.isFinite(u?._joinOrder) ? u._joinOrder : (idx + 1)
-        }));
-    };
-
-    const getUserJoinOrder = (u, idx = 0) => {
-        return Number.isFinite(u?._joinOrder) ? u._joinOrder : (idx + 1);
-    };
-
     const pickNextHostCandidate = () => {
-        const players = users.value
+        return users.value
             .filter(u => !u.isSpectator)
             .slice()
             .sort((a, b) => {
-                const orderDiff = getUserJoinOrder(a) - getUserJoinOrder(b);
-                if (orderDiff !== 0) return orderDiff;
+                const d = getJoinOrder(a) - getJoinOrder(b);
+                if (d !== 0) return d;
                 return String(a.id).localeCompare(String(b.id), 'zh-CN');
-            });
+            })[0] || null;
+    };
 
-        return players[0] || null;
+    // -------------------------
+    // 日志相关
+    // -------------------------
+    const buildDisplayLogs = (roomId = '') => {
+        const key = normalizeRoomKey(roomId);
+        const logs = Array.isArray(roomLogsMap.value[key]) ? roomLogsMap.value[key] : [];
+
+        return logs
+            .filter(item => item?.type === 'chat' || item?.type === 'error')
+            .sort((a, b) => {
+                const ta = Number(a?.timestamp || 0);
+                const tb = Number(b?.timestamp || 0);
+                if (ta !== tb) return ta - tb;
+                return String(a?.id || '').localeCompare(String(b?.id || ''), 'zh-CN');
+            });
+    };
+
+    const refreshCurrentRoomLogs = () => {
+        chatLogs.value = buildDisplayLogs(currentRoomId.value);
+    };
+
+    const switchRoomLogs = (roomId = '') => {
+        currentRoomId.value = (roomId || '').toString().trim();
+        const key = normalizeRoomKey(currentRoomId.value);
+        roomLogsMap.value[key] = [];
+        chatLogs.value = [];
+    };
+
+    const pruneRoomLogsByExistingRoomIds = (roomIds = []) => {
+        const keepKeys = new Set(roomIds.map(id => normalizeRoomKey(id)));
+        const next = {};
+
+        Object.entries(roomLogsMap.value || {}).forEach(([k, logs]) => {
+            if (k === NO_ROOM_KEY || keepKeys.has(k)) {
+                next[k] = Array.isArray(logs) ? logs.slice(-MAX_CHAT_LOGS) : [];
+            }
+        });
+
+        roomLogsMap.value = next;
+
+        const currentKey = normalizeRoomKey(currentRoomId.value);
+        if (currentKey !== NO_ROOM_KEY && !keepKeys.has(currentKey)) {
+            currentRoomId.value = '';
+            chatLogs.value = [];
+        } else {
+            refreshCurrentRoomLogs();
+        }
+    };
+
+    const clearRoomLogCache = (roomId = '') => {
+        const key = normalizeRoomKey(roomId || currentRoomId.value);
+        if (key === NO_ROOM_KEY) return;
+
+        if (Object.prototype.hasOwnProperty.call(roomLogsMap.value, key)) {
+            delete roomLogsMap.value[key];
+        }
+
+        if (normalizeRoomKey(currentRoomId.value) === key) {
+            chatLogs.value = [];
+        }
     };
 
     const addLog = (type, from, content) => {
+        if (type !== 'chat' && type !== 'error') return;
+
         const key = normalizeRoomKey(currentRoomId.value);
-        const list = Array.isArray(roomLogsMap.value[key]) ? roomLogsMap.value[key] : [];
-        const nextItem = {
+        const text = (content ?? '').toString();
+
+        if (type === 'error') {
+            const dedupKey = `${key}::${text.trim()}`;
+            if (errorLogDedupSet.has(dedupKey)) return;
+            errorLogDedupSet.add(dedupKey);
+        }
+
+        const item = {
             id: `log-${Date.now()}-${Math.random()}`,
             type,
             from,
-            content,
+            content: text,
             timestamp: Date.now()
         };
 
-        list.push(nextItem);
-        const trimmed = list.length > 150 ? list.slice(-100) : list;
+        const list = Array.isArray(roomLogsMap.value[key]) ? [...roomLogsMap.value[key]] : [];
+        list.push(item);
+        roomLogsMap.value[key] = list.slice(-MAX_CHAT_LOGS);
 
-        roomLogsMap.value[key] = trimmed;
         if (key === normalizeRoomKey(currentRoomId.value)) {
-            chatLogs.value = [...trimmed];
+            refreshCurrentRoomLogs();
+        }
+    };
+
+    // -------------------------
+    // 重连相关
+    // -------------------------
+    const clearReconnectTimer = () => {
+        if (!reconnectTimer) return;
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+    };
+
+    const scheduleReconnect = () => {
+        if (manualDisconnect || !reconnectContext || reconnectTimer || isConnected.value) return;
+
+        const idx = Math.min(reconnectAttempt, reconnectDelays.length - 1);
+        const delay = reconnectDelays[idx];
+        reconnectAttempt++;
+
+        reconnectTimer = setTimeout(async () => {
+            reconnectTimer = null;
+            if (manualDisconnect || isConnected.value || !reconnectContext) return;
+
+            try {
+                await connectOnline(
+                    reconnectContext.roomId,
+                    reconnectContext.pwd,
+                    reconnectContext.name,
+                    reconnectContext.uid,
+                    { isReconnect: true }
+                );
+            } catch (e) {
+                const status = Number(e?.status || 0);
+                const msg = String(e?.message || '');
+
+                // 404 / 房间不存在：判定为不可恢复错误，停止重连
+                if (status === 404 || /404|房间不存在|已关闭/.test(msg)) {
+                    addLog('error', '系统', '房间已不存在，已停止自动重连');
+                    reconnectContext = null;
+                    reconnectAttempt = 0;
+                    clearReconnectTimer();
+                    mode.value = 'disconnected';
+                    return;
+                }
+
+                scheduleReconnect();
+            }
+        }, delay);
+    };
+
+
+
+    // -------------------------
+    // 用户/连接处理
+    // -------------------------
+    const syncHostStateIfNeeded = () => {
+        if (!isHost.value) return;
+        networkClient?.broadcast({
+            type: 'sync_user_state',
+            data: { users: buildUsersSnapshot() }
+        });
+    };
+
+    const ensureMeExists = () => {
+        const myId = networkClient?.userId;
+        if (!myId) return;
+
+        const me = users.value.find(u => u.id === myId);
+        if (me) return;
+
+        users.value.push({
+            id: myId,
+            name: networkClient?.userName || '我',
+            isHost: false,
+            isSpectator: !!networkClient?.isSpectator,
+            _joinOrder: ++userJoinOrderSeed
+        });
+    };
+
+    const upsertUser = (user) => {
+        const normalized = normalizeIncomingUser(user);
+        const selfId = networkClient?.userId || '';
+
+        const target = users.value.find(u => u.id === normalized.id);
+        if (!target) {
+            users.value.push({
+                id: normalized.id,
+                name: normalized.name,
+                isHost: normalized.id === selfId
+                    ? (!!normalized.isHost && !networkClient?.isSpectator)
+                    : normalized.isHost,
+                isSpectator: normalized.id === selfId
+                    ? !!networkClient?.isSpectator
+                    : normalized.isSpectator,
+                _joinOrder: ++userJoinOrderSeed
+            });
+        } else {
+            const oldId = target.id;
+            const idChanged = !!(normalized.id && target.id !== normalized.id);
+
+            if (idChanged) {
+                target.id = normalized.id;
+                if (pendingInputs.value.has(oldId)) {
+                    const oldInput = pendingInputs.value.get(oldId);
+                    pendingInputs.value.delete(oldId);
+                    pendingInputs.value.set(normalized.id, oldInput);
+                    touchPendingInputs();
+                }
+            }
+
+            if (normalized.hasHostField) target.isHost = normalized.isHost;
+            if (normalized.hasSpectatorField) target.isSpectator = normalized.isSpectator;
+            if (normalized.name && normalized.name !== target.name) target.name = normalized.name;
+
+            if (normalized.id === selfId) {
+                target.isSpectator = !!networkClient?.isSpectator;
+                if (target.isSpectator) target.isHost = false;
+            }
+
+            if (!target.isHost && idChanged) {
+                target._joinOrder = ++userJoinOrderSeed;
+            } else if (!Number.isFinite(target._joinOrder)) {
+                target._joinOrder = ++userJoinOrderSeed;
+            }
         }
 
-        persistRoomLogs();
+        if (normalized.id === selfId) {
+            const me = users.value.find(u => u.id === selfId);
+            isHost.value = !!(me?.isHost && !me?.isSpectator);
+            mode.value = me?.isSpectator ? 'spectator' : 'client';
+        }
+
+        syncHostStateIfNeeded();
+    };
+
+    const handleUserLeave = (userId) => {
+        const idx = users.value.findIndex(u => u.id === userId);
+        if (idx === -1) return;
+
+        const leaving = users.value[idx];
+        const wasHost = !!leaving.isHost;
+
+        users.value.splice(idx, 1);
+        pendingInputs.value.delete(userId);
+        touchPendingInputs();
+
+        if (!wasHost || !isConnected.value) return;
+
+        const nextHost = pickNextHostCandidate();
+        if (!nextHost) {
+            clearRoomLogCache(currentRoomId.value);
+            disconnect();
+            return;
+        }
+
+        users.value.forEach(u => {
+            u.isHost = (u.id === nextHost.id);
+        });
+
+        isHost.value = nextHost.id === (networkClient?.userId || '');
+        if (isHost.value) {
+            mode.value = 'client';
+            networkClient?.broadcast({
+                type: 'host_change',
+                data: { hostId: nextHost.id, hostName: nextHost.name }
+            });
+            syncHostStateIfNeeded();
+        }
     };
 
     const initNetwork = (forceOnline = settings.onlineMode) => {
@@ -1861,15 +1925,14 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
         }
 
         networkClient = forceOnline ? new WebSocketClient() : new LocalChannelClient();
+
         networkClient.init({
             onConnectionChange: (status) => {
                 isConnected.value = status;
-                addLog('system', '系统', status ? '连接成功' : '连接断开');
 
                 if (status) {
                     sessionEstablished = true;
                     reconnectAttempt = 0;
-                    isReconnecting = false;
                     clearReconnectTimer();
                     return;
                 }
@@ -1898,142 +1961,31 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
                 currentRoomId.value = '';
                 chatLogs.value = [];
             },
+
             onError: (msg) => addLog('error', '系统', msg),
-            onUserJoin: (user) => {
-                const normalized = normalizeIncomingUser(user);
 
-                const selfId = networkClient?.userId || '';
-                const existingById = users.value.find(u => u.id === normalized.id);
-                const target = existingById;
+            onUserJoin: (user) => upsertUser(user),
 
-                if (!target) {
-                    users.value.push({
-                        id: normalized.id,
-                        name: normalized.name,
-                        isHost: normalized.id === selfId
-                            ? (!!normalized.isHost && !networkClient?.isSpectator)
-                            : normalized.isHost,
-                        isSpectator: normalized.id === selfId
-                            ? !!networkClient?.isSpectator
-                            : normalized.isSpectator,
-                        _joinOrder: ++userJoinOrderSeed
-                    });
+            onUserLeave: (userId) => handleUserLeave(userId),
 
-                    addLog(
-                        'system',
-                        '系统',
-                        `${normalized.name}${normalized.isHost ? ' (房主)' : ''} 加入房间`
-                    );
-                } else {
-                    const oldId = target.id;
-                    const idChanged = !!(normalized.id && target.id !== normalized.id);
-
-                    if (idChanged) {
-                        target.id = normalized.id;
-
-                        if (pendingInputs.value.has(oldId)) {
-                            const oldInput = pendingInputs.value.get(oldId);
-                            pendingInputs.value.delete(oldId);
-                            pendingInputs.value.set(normalized.id, oldInput);
-                            touchPendingInputs();
-                        }
-                    }
-
-                    if (normalized.hasHostField) {
-                        target.isHost = normalized.isHost;
-                    }
-
-                    if (normalized.hasSpectatorField) {
-                        target.isSpectator = normalized.isSpectator;
-                    }
-
-                    if (normalized.name && normalized.name !== target.name) {
-                        target.name = normalized.name;
-                    }
-
-                    if (normalized.id === selfId) {
-                        target.isSpectator = !!networkClient?.isSpectator;
-                        if (target.isSpectator) {
-                            target.isHost = false;
-                        }
-                    }
-
-                    // 非房主用户在“身份更新”时移动到末尾
-                    if (!target.isHost && idChanged) {
-                        target._joinOrder = ++userJoinOrderSeed;
-                    } else if (!Number.isFinite(target._joinOrder)) {
-                        target._joinOrder = ++userJoinOrderSeed;
-                    }
-                }
-
-                if (normalized.id === selfId) {
-                    const me = users.value.find(u => u.id === selfId);
-                    isHost.value = !!(me?.isHost && !me?.isSpectator);
-                    mode.value = me?.isSpectator ? 'spectator' : 'client';
-                }
-
-                if (isHost.value) {
-                    networkClient?.broadcast({
-                        type: 'sync_user_state',
-                        data: { users: buildUsersSnapshot() }
-                    });
-                }
-            },
-            onUserLeave: (userId) => {
-                const idx = users.value.findIndex(u => u.id === userId);
-                if (idx !== -1) {
-                    const leavingUser = users.value[idx];
-                    const name = leavingUser.name;
-                    const wasHost = !!leavingUser.isHost;
-
-                    users.value.splice(idx, 1);
-                    pendingInputs.value.delete(userId);
-                    touchPendingInputs();
-                    addLog('system', '系统', `${name} 离开了房间`);
-
-                    if (wasHost && isConnected.value) {
-                        const nextHost = pickNextHostCandidate();
-
-                        if (!nextHost) {
-                            addLog('system', '系统', '房主已离开且玩家列表为空，房间已解散');
-                            disconnect();
-                            return;
-                        }
-
-                        users.value.forEach(u => {
-                            u.isHost = (u.id === nextHost.id);
-                        });
-
-                        const selfId = networkClient?.userId || '';
-                        isHost.value = nextHost.id === selfId;
-                        if (isHost.value) {
-                            mode.value = 'client';
-                        }
-
-                        addLog('system', '系统', `房主已离开，${nextHost.name} 已自动成为新房主`);
-
-                        if (isHost.value) {
-                            networkClient?.broadcast({
-                                type: 'host_change',
-                                data: {
-                                    hostId: nextHost.id,
-                                    hostName: nextHost.name
-                                }
-                            });
-
-                            networkClient?.broadcast({
-                                type: 'sync_user_state',
-                                data: { users: buildUsersSnapshot() }
-                            });
-                        }
-                    }
-                }
-            },
             onMessage: (msg) => {
+                const myId = (networkClient?.userId || '').toString();
+
+                const emitMap = {
+                    ai_stream: 'multiplayer_ai_stream',
+                    delete_last_message: 'multiplayer_delete_last_message',
+                    request_input: 'multiplayer_request_input',
+                    sync_history_data: 'multiplayer_sync_history_data',
+                    sync_regex_data: 'multiplayer_sync_regex_data',
+                    acu_full_sync: 'multiplayer_acu_full_sync',
+                    acu_delta_sync: 'multiplayer_acu_delta_sync'
+                };
+
                 switch (msg.type) {
                     case 'chat':
-                        addLog('chat', msg.fromName, msg.data.content);
+                        if (msg.from !== myId) addLog('chat', msg.fromName, msg.data.content);
                         break;
+
                     case 'rename': {
                         const newName = (msg.data?.name || msg.fromName || '').trim();
                         if (!newName) break;
@@ -2047,15 +1999,10 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
                         }
 
                         const target = users.value.find(u => u.id === msg.from);
-                        if (target) {
-                            const oldName = target.name;
-                            target.name = newName;
-                            if (oldName !== newName) {
-                                addLog('system', '系统', `${oldName} 更名为 ${newName}`);
-                            }
-                        }
+                        if (target) target.name = newName;
                         break;
                     }
+
                     case 'user_input':
                         pendingInputs.value.set(msg.from, {
                             userName: msg.fromName,
@@ -2066,20 +2013,18 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
                             hideContent: !!msg.data?.hideContent
                         });
                         touchPendingInputs();
-                        addLog('system', msg.fromName, '提交了输入');
                         break;
+
                     case 'revoke_input':
                         if (pendingInputs.value.has(msg.from)) {
                             pendingInputs.value.delete(msg.from);
                             touchPendingInputs();
-                            addLog('system', msg.fromName || '用户', '撤回了已提交输入');
                         }
                         break;
+
                     case 'spectator_mode': {
                         const enabled = !!msg.data?.enabled;
                         const targetId = msg.from || msg.data?.userId || '';
-                        const fallbackName = (msg.fromName || msg.data?.userName || '').trim();
-
                         const target = users.value.find(u => u.id === targetId);
 
                         if (target) {
@@ -2090,50 +2035,41 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
                             }
                         }
 
-                        addLog(
-                            'system',
-                            '系统',
-                            `${(target?.name || fallbackName || '用户')}${enabled ? '进入' : '退出'}观众模式`
-                        );
-
-                        if (isHost.value) {
-                            networkClient?.broadcast({
-                                type: 'sync_user_state',
-                                data: { users: buildUsersSnapshot() }
-                            });
-                        }
+                        syncHostStateIfNeeded();
                         break;
                     }
+
                     case 'ai_response':
                         if (msg.data?.variableMode) variableMode.value = msg.data.variableMode;
                         eventEmit('multiplayer_ai_response', msg.data || {});
                         break;
-                    case 'ai_stream':
-                        eventEmit('multiplayer_ai_stream', msg.data || {});
-                        break;
+
                     case 'user_message':
-                        // 房主已合并发送后，所有端都应重置“已提交/待提交”状态
                         clearPendingInputs();
                         eventEmit('multiplayer_user_message', msg.data || {});
                         break;
+
                     case 'request_pending_inputs':
-                        if (isHost.value && msg.from !== networkClient?.userId) {
-                            const items = buildPendingInputsSnapshot();
+                        if (isHost.value && msg.from !== myId) {
                             networkClient.send({
                                 type: 'sync_pending_inputs',
-                                data: { targetUserId: msg.from, items }
+                                data: {
+                                    targetUserId: msg.from,
+                                    items: buildPendingInputsSnapshot()
+                                }
                             });
-
                             networkClient.send({
                                 type: 'sync_user_state',
-                                data: { targetUserId: msg.from, users: buildUsersSnapshot() }
+                                data: {
+                                    targetUserId: msg.from,
+                                    users: buildUsersSnapshot()
+                                }
                             });
-
-                            addLog('system', '系统', `已向 ${msg.fromName || '用户'} 同步待提交输入 (${items.length} 条)`);
                         }
                         break;
+
                     case 'sync_pending_inputs':
-                        if (!isHost.value && msg.data?.targetUserId === networkClient?.userId) {
+                        if (!isHost.value && msg.data?.targetUserId === myId) {
                             pendingInputs.value.clear();
                             (msg.data.items || []).forEach(item => {
                                 pendingInputs.value.set(item.userId, {
@@ -2145,13 +2081,13 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
                                 });
                             });
                             touchPendingInputs();
-                            addLog('system', '系统', `待提交输入同步完成 (${pendingInputs.value.size} 条)`);
                         }
                         break;
+
                     case 'sync_user_state':
                         if (!isHost.value) {
-                            const targetUserId = msg.data?.targetUserId;
-                            if (targetUserId && targetUserId !== networkClient?.userId) break;
+                            const targetUserId = (msg.data?.targetUserId || '').toString();
+                            if (targetUserId && targetUserId !== myId) break;
 
                             const incoming = Array.isArray(msg.data?.users) ? msg.data.users : [];
                             const nextUsers = incoming
@@ -2167,7 +2103,6 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
                                 })
                                 .filter(u => !!u.id);
 
-                            const myId = networkClient?.userId;
                             if (myId && !nextUsers.some(u => u.id === myId)) {
                                 nextUsers.push({
                                     id: myId,
@@ -2183,79 +2118,52 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
                             const me = users.value.find(u => u.id === myId);
                             if (me) {
                                 me.isSpectator = !!networkClient?.isSpectator;
-                                if (me.isSpectator) {
-                                    me.isHost = false;
-                                }
+                                if (me.isSpectator) me.isHost = false;
                             }
 
                             isHost.value = !!users.value.find(u => u.id === myId)?.isHost;
                             mode.value = me?.isSpectator ? 'spectator' : 'client';
                         }
                         break;
-                    case 'delete_last_message':
-                        eventEmit('multiplayer_delete_last_message');
-                        break;
-                    case 'request_input':
-                        addLog('system', '系统', '房主请求输入，请提交你的回复');
-                        eventEmit('multiplayer_request_input');
-                        break;
+
                     case 'reset_input':
                         clearPendingInputs();
-                        addLog('system', '系统', '输入已被重置');
                         break;
+
                     case 'sync_history_request':
                         if (isHost.value) {
-                            addLog('system', msg.fromName, '请求同步历史消息');
-                            eventEmit('multiplayer_sync_history_request', { userId: msg.from, depth: msg.data?.depth || 0 });
+                            eventEmit('multiplayer_sync_history_request', {
+                                userId: msg.from,
+                                depth: msg.data?.depth || 0
+                            });
                         }
                         break;
-                    case 'sync_history_data':
-                        if (!isHost.value) eventEmit('multiplayer_sync_history_data', msg.data);
-                        break;
+
                     case 'sync_regex_request':
-                        if (isHost.value) {
-                            addLog('system', msg.fromName, '请求同步正则');
-                            eventEmit('multiplayer_sync_regex_request', msg.from);
-                        }
+                        if (isHost.value) eventEmit('multiplayer_sync_regex_request', msg.from);
                         break;
-                    case 'sync_regex_data':
-                        if (!isHost.value) eventEmit('multiplayer_sync_regex_data', msg.data);
-                        break;
+
                     case 'sync_variables_request':
                         if (isHost.value) {
-                            addLog('system', msg.fromName, `请求同步变量 (模式: ${msg.data?.variableMode})`);
-                            eventEmit('multiplayer_sync_variables_request', { userId: msg.from, variableMode: msg.data?.variableMode });
+                            eventEmit('multiplayer_sync_variables_request', {
+                                userId: msg.from,
+                                variableMode: msg.data?.variableMode
+                            });
                         }
                         break;
+
                     case 'sync_variables':
                         if (!isHost.value) {
                             const targetUserId = (msg.data?.targetUserId || '').toString();
-                            const myId = (networkClient?.userId || '').toString();
-
-                            // 定向包：非目标客户端直接忽略
                             if (targetUserId && targetUserId !== myId) break;
+                            eventEmit('multiplayer_sync_variables', {
+                                variableType: msg.data?.variableType,
+                                content: msg.data?.content,
+                                targetUserId
+                            });
+                        }
+                        break;
 
-                            const { variableType, content } = msg.data || {};
-                            addLog('system', '系统', `[${variableType}] 收到变量同步`);
-                            eventEmit('multiplayer_sync_variables', { variableType, content, targetUserId });
-                        }
-                        break;
-                    case 'acu_full_sync':
-                        if (!isHost.value) {
-                            addLog('system', '系统', `[数据库] 收到全量同步 (${Object.keys(msg.data.tables || {}).length} 表)`);
-                            acuSyncState.value.fullSynced = true;
-                            acuSyncState.value.lastSyncTimestamp = Date.now();
-                            acuSyncState.value.isolationKey = msg.data.isolationKey || '';
-                            eventEmit('multiplayer_acu_full_sync', msg.data);
-                        }
-                        break;
-                    case 'acu_delta_sync':
-                        if (!isHost.value) {
-                            addLog('system', '系统', `[数据库] 收到增量同步 (${(msg.data.modifiedKeys || []).length} 表)`);
-                            acuSyncState.value.lastSyncTimestamp = Date.now();
-                            eventEmit('multiplayer_acu_delta_sync', msg.data);
-                        }
-                        break;
                     case 'user_persona':
                         pendingPersonas.value.set(msg.from, {
                             userName: msg.fromName,
@@ -2264,6 +2172,7 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
                         });
                         triggerRef(pendingPersonas);
                         break;
+
                     case 'transfer_host': {
                         const targetUserId = msg.data?.targetUserId;
                         if (!targetUserId) break;
@@ -2284,76 +2193,79 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
                             u.isHost = (u.id === target.id);
                         });
 
-                        isHost.value = target.id === networkClient?.userId && !target.isSpectator;
-                        addLog('system', '系统', `${target.name} 成为了房主`);
+                        isHost.value = target.id === myId && !target.isSpectator;
 
-                        // 如果我就是新房主，主动广播最终权威状态，避免各端视图不一致
                         if (isHost.value) {
                             networkClient?.broadcast({
                                 type: 'host_change',
-                                data: {
-                                    hostId: target.id,
-                                    hostName: target.name
-                                }
+                                data: { hostId: target.id, hostName: target.name }
                             });
-
-                            networkClient?.broadcast({
-                                type: 'sync_user_state',
-                                data: { users: buildUsersSnapshot() }
-                            });
+                            syncHostStateIfNeeded();
                         }
                         break;
                     }
+
                     case 'host_change':
                         if (msg.data?.hostId) {
                             let targetHost = users.value.find(u => u.id === msg.data.hostId);
 
                             if (!targetHost || targetHost.isSpectator) {
                                 const fallbackHost = pickNextHostCandidate();
-
                                 if (!fallbackHost) {
-                                    addLog('system', '系统', '房间无可用玩家，房间已解散');
+                                    clearRoomLogCache(currentRoomId.value);
                                     disconnect();
                                     break;
                                 }
-
                                 targetHost = fallbackHost;
-                                addLog('system', '系统', `收到无效房主变更，已自动改派为 ${targetHost.name}`);
                             }
 
                             users.value.forEach(u => {
                                 u.isHost = (u.id === targetHost.id);
                             });
 
-                            isHost.value = targetHost.id === networkClient?.userId && !targetHost.isSpectator;
-                            addLog('system', '系统', `${targetHost.name || msg.data.hostName || '未知'} 成为了房主`);
+                            isHost.value = targetHost.id === myId && !targetHost.isSpectator;
                         }
                         break;
 
+                    default:
+                        if (emitMap[msg.type]) {
+                            if (msg.type === 'acu_full_sync' && !isHost.value) {
+                                acuSyncState.value.fullSynced = true;
+                                acuSyncState.value.lastSyncTimestamp = Date.now();
+                                acuSyncState.value.isolationKey = msg.data?.isolationKey || '';
+                            }
+                            if (msg.type === 'acu_delta_sync' && !isHost.value) {
+                                acuSyncState.value.lastSyncTimestamp = Date.now();
+                            }
+                            eventEmit(emitMap[msg.type], msg.data || {});
+                        }
+                        break;
                 }
             }
         });
     };
 
-    // 房主限时发送逻辑
-    let timeoutTimer;
-    let lastPendingSize = 0;
-    watch(() => pendingInputs.value, () => { // 用 getter 确保 shallowRef 变化被追踪
+    // -------------------------
+    // 输入池限时自动发送
+    // -------------------------
+    watch(pendingInputsVersion, () => {
         const newSize = pendingInputs.value.size;
         const oldSize = lastPendingSize;
         lastPendingSize = newSize;
+
         if (isHost.value && settings.timedInputSeconds > 0 && newSize > 0 && newSize > oldSize) {
             if (timeoutTimer) clearTimeout(timeoutTimer);
-            addLog('system', '系统', `[限时输入] ${settings.timedInputSeconds}秒后自动发送`);
             timeoutTimer = setTimeout(() => {
                 if (isHost.value && pendingInputs.value.size > 0) {
-                    addLog('system', '系统', '[限时输入] 自动触发合并发送');
                     submitToAI();
                 }
             }, settings.timedInputSeconds * 1000);
         }
     });
 
+    // -------------------------
+    // 对外动作
+    // -------------------------
     const submitToAI = async () => {
         if (!isHost.value) return;
 
@@ -2368,19 +2280,16 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
             return;
         }
 
-        const fullCombined = snapshot
-            .map(item => `${(item.prefix || '[{name}]:').replace('{name}', item.userName)} ${item.content}${item.suffix || ''}`)
-            .join('\n\n');
+        const toLine = (item) => {
+            const p = (item.prefix || '[{name}]:').replace('{name}', item.userName);
+            return `${p} ${item.content}${item.suffix || ''}`;
+        };
 
+        const fullCombined = snapshot.map(toLine).join('\n\n');
         const visibleInputs = snapshot.filter(item => !item.hideContent);
-        const visibleCombined = visibleInputs
-            .map(item => `${(item.prefix || '[{name}]:').replace('{name}', item.userName)} ${item.content}${item.suffix || ''}`)
-            .join('\n\n');
-
         const hiddenInputs = snapshot.filter(item => item.hideContent);
-        const hiddenCombined = hiddenInputs
-            .map(item => `${(item.prefix || '[{name}]:').replace('{name}', item.userName)} ${item.content}${item.suffix || ''}`)
-            .join('\n\n');
+        const visibleCombined = visibleInputs.map(toLine).join('\n\n');
+        const hiddenCombined = hiddenInputs.map(toLine).join('\n\n');
 
         const batchId = `batch_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
@@ -2388,7 +2297,7 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
             await createChatMessages([{ role: 'user', message: fullCombined }]);
             const hostMsgId = getLastMessageId();
 
-            networkClient.broadcast({
+            networkClient?.broadcast({
                 type: 'user_message',
                 data: {
                     batchId,
@@ -2400,12 +2309,7 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
 
             await triggerSlash('/trigger');
 
-            // 首轮生成已读取 fullCombined；这里仅为后续重roll保留隐藏输入上下文
-            if (hiddenCombined.trim()) {
-                setHiddenRerollContext(hiddenCombined);
-            } else {
-                setHiddenRerollContext('');
-            }
+            setHiddenRerollContext(hiddenCombined.trim() ? hiddenCombined : '');
 
             try {
                 if (hostMsgId >= 0) {
@@ -2419,14 +2323,13 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
                 console.warn('[联机Mod] 用户层脱敏回写失败:', e);
             }
 
-            addLog('ai', '系统', `已触发 AI 生成（${snapshot.length}条）`);
             clearPendingInputs();
         } catch (e) {
             addLog('error', '系统', `发送给AI失败: ${e.message}`);
             console.error('[联机Mod] submitToAI 失败:', e);
         }
     };
-    
+
     const renameSelf = (newNameRaw) => {
         if (!networkClient) return { ok: false, reason: 'no_client' };
 
@@ -2437,29 +2340,54 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
         const duplicated = users.value.find(
             u => u.id !== myId && normalizeUserName(u.name) === normalizeUserName(newName)
         );
+
         if (duplicated) {
             addLog('error', '系统', `用户名 "${newName}" 已被占用`);
             return { ok: false, reason: 'duplicate' };
         }
 
-        const oldName = networkClient.userName;
         networkClient.userName = newName;
-
         const me = users.value.find(u => u.id === myId);
         if (me) me.name = newName;
 
         if (isConnected.value) {
-            networkClient.broadcast({
-                type: 'rename',
-                data: { name: newName }
-            });
-        }
-
-        if (oldName && oldName !== newName) {
-            addLog('system', '系统', `你已更名为 ${newName}`);
+            networkClient.broadcast({ type: 'rename', data: { name: newName } });
         }
 
         return { ok: true };
+    };
+
+    const setClientIdentity = ({ roomKey, name, uid, spectator }) => {
+        const safeName = (name || '').trim() || '匿名';
+        const safeUid = (uid || '').trim() || `uid_${Math.random().toString(36).slice(2, 10)}`;
+
+        networkClient.userName = safeName;
+        networkClient.userId = makeBoundUserId(roomKey, safeUid);
+        networkClient.isSpectator = !!spectator;
+
+        spectatorMode.value = !!spectator;
+        return { safeName, safeUid };
+    };
+
+    const postJoinSync = (spectatorFlag) => {
+        mode.value = spectatorFlag ? 'spectator' : 'client';
+        isHost.value = false;
+
+        ensureMeExists();
+
+        const me = users.value.find(u => u.id === networkClient.userId);
+        if (me) me.isSpectator = spectatorFlag;
+
+        networkClient.send({
+            type: 'spectator_mode',
+            data: {
+                enabled: spectatorFlag,
+                userId: networkClient.userId,
+                userName: networkClient.userName
+            }
+        });
+
+        networkClient.send({ type: 'request_pending_inputs', data: {} });
     };
 
     const connectOnline = async (roomId, pwd, name, uid, options = {}) => {
@@ -2475,68 +2403,30 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
         reconnectContext = { roomId, pwd, name, uid, spectator: spectatorFlag };
 
         initNetwork(true);
-        if (!isReconnect) {
-            switchRoomLogs(roomId);
-        }
+        if (!isReconnect) switchRoomLogs(roomId);
 
-        const safeName = (name || '').trim() || '匿名';
-        const safeUid = (uid || '').trim() || `uid_${Math.random().toString(36).slice(2, 10)}`;
-
-        networkClient.userName = safeName;
-        networkClient.userId = makeBoundUserId(roomId, safeUid);
-        networkClient.isSpectator = spectatorFlag;
-        spectatorMode.value = spectatorFlag;
+        setClientIdentity({
+            roomKey: roomId,
+            name,
+            uid,
+            spectator: spectatorFlag
+        });
 
         try {
             const wsUrl = await RoomApiService.verifyAndJoin(settings.onlineServer, roomId, pwd);
             await networkClient.connect(wsUrl, pwd);
-            mode.value = spectatorFlag ? 'spectator' : 'client';
-            isHost.value = false;
-            isReconnecting = false;
-
-            const existing = users.value.find(
-                u => u.id === networkClient.userId
-            );
-            if (!existing) {
-                users.value.push({
-                    id: networkClient.userId,
-                    name: networkClient.userName,
-                    isHost: false,
-                    isSpectator: spectatorFlag
-                });
-            } else {
-                existing.isSpectator = spectatorFlag;
-            }
-
-            addLog(
-                'system',
-                '系统',
-                isReconnect
-                    ? `自动重连成功，已回到房间 "${roomId}"（${spectatorFlag ? '观众' : '玩家'}）`
-                    : `已加入房间 "${roomId}"（${spectatorFlag ? '观众' : '玩家'}）`
-            );
-
-            networkClient.send({
-                type: 'spectator_mode',
-                data: {
-                    enabled: spectatorFlag,
-                    userId: networkClient.userId,
-                    userName: networkClient.userName
-                }
-            });
-
-            networkClient.send({ type: 'request_pending_inputs', data: {} });
+            postJoinSync(spectatorFlag);
         } catch (e) {
             addLog('error', '系统', `${isReconnect ? '自动重连失败' : '连接失败'}: ${e.message}`);
             throw e;
         }
     };
+
     const startOfflineServer = async (port, pwd, name, uid) => {
         manualDisconnect = false;
         sessionEstablished = false;
         reconnectContext = null;
         reconnectAttempt = 0;
-        isReconnecting = false;
 
         const channelPort = String((port || '').toString().trim() || '2157');
         const roomKey = `local_${channelPort}`;
@@ -2545,12 +2435,12 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
         switchRoomLogs(roomKey);
 
         const safeName = (name || '').trim() || '房主';
-        const safeUid = (uid || '').trim() || `uid_${Math.random().toString(36).slice(2, 10)}`;
-
-        networkClient.userName = safeName;
-        networkClient.userId = makeBoundUserId(roomKey, safeUid);
-        networkClient.isSpectator = false;
-        spectatorMode.value = false;
+        setClientIdentity({
+            roomKey,
+            name: safeName,
+            uid,
+            spectator: false
+        });
 
         try {
             await networkClient.startServer({
@@ -2561,8 +2451,6 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
 
             mode.value = 'client';
             isHost.value = true;
-
-            addLog('system', '系统', `已创建本地房间 "${channelPort}"（你是房主）`);
         } catch (e) {
             addLog('error', '系统', `创建本地房间失败: ${e.message}`);
             throw e;
@@ -2570,14 +2458,12 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
     };
 
     const connectOffline = async (port, pwd, name, uid, options = {}) => {
-        const { spectator = false } = options;
-        const spectatorFlag = !!spectator;
+        const spectatorFlag = !!options.spectator;
 
         manualDisconnect = false;
         sessionEstablished = false;
         reconnectContext = null;
         reconnectAttempt = 0;
-        isReconnecting = false;
 
         const channelPort = String((port || '').toString().trim() || '2157');
         const roomKey = `local_${channelPort}`;
@@ -2585,65 +2471,44 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
         initNetwork(false);
         switchRoomLogs(roomKey);
 
-        const safeName = (name || '').trim() || '匿名';
-        const safeUid = (uid || '').trim() || `uid_${Math.random().toString(36).slice(2, 10)}`;
-
-        networkClient.userName = safeName;
-        networkClient.userId = makeBoundUserId(roomKey, safeUid);
-        networkClient.isSpectator = spectatorFlag;
-        spectatorMode.value = spectatorFlag;
+        const { safeName } = setClientIdentity({
+            roomKey,
+            name,
+            uid,
+            spectator: spectatorFlag
+        });
 
         try {
             await networkClient.connect(channelPort, pwd || '', safeName, spectatorFlag);
-
-            mode.value = spectatorFlag ? 'spectator' : 'client';
-            isHost.value = false;
-
-            const existing = users.value.find(
-                u => u.id === networkClient.userId
-            );
-
-            if (!existing) {
-                users.value.push({
-                    id: networkClient.userId,
-                    name: networkClient.userName,
-                    isHost: false,
-                    isSpectator: spectatorFlag
-                });
-            } else {
-                existing.isSpectator = spectatorFlag;
-            }
-
-            addLog('system', '系统', `已连接本地频道 "${channelPort}"（${spectatorFlag ? '观众' : '玩家'}）`);
-
-            networkClient.send({
-                type: 'spectator_mode',
-                data: {
-                    enabled: spectatorFlag,
-                    userId: networkClient.userId,
-                    userName: networkClient.userName
-                }
-            });
-
-            networkClient.send({ type: 'request_pending_inputs', data: {} });
+            postJoinSync(spectatorFlag);
         } catch (e) {
             addLog('error', '系统', `本地连接失败: ${e.message}`);
             throw e;
         }
     };
+
     const disconnect = () => {
         manualDisconnect = true;
         sessionEstablished = false;
         reconnectContext = null;
         reconnectAttempt = 0;
-        isReconnecting = false;
         clearReconnectTimer();
+
         setHiddenRerollContext('');
 
         if (timeoutTimer) {
             clearTimeout(timeoutTimer);
             timeoutTimer = null;
         }
+
+        isConnected.value = false;
+        mode.value = 'disconnected';
+        isHost.value = false;
+        users.value = [];
+        clearPendingInputs();
+        currentRoomId.value = '';
+        chatLogs.value = [];
+        errorLogDedupSet.clear();
 
         networkClient?.disconnect();
     };
@@ -2652,10 +2517,7 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
         if (!networkClient || !isConnected.value) return;
 
         const myId = networkClient.userId;
-        if (!pendingInputs.value.has(myId)) {
-            addLog('system', '系统', '你当前没有可撤回的输入');
-            return;
-        }
+        if (!pendingInputs.value.has(myId)) return;
 
         pendingInputs.value.delete(myId);
         touchPendingInputs();
@@ -2664,8 +2526,6 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
             type: 'revoke_input',
             data: {}
         });
-
-        addLog('system', '我', '已撤回输入');
     };
 
     const setSpectatorMode = (enabled) => {
@@ -2680,7 +2540,6 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
 
         spectatorMode.value = next;
 
-        // 未初始化网络客户端时，仅保存本地状态（作为默认加入身份）
         if (!networkClient) {
             return { ok: true };
         }
@@ -2710,7 +2569,6 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
         });
 
         mode.value = next ? 'spectator' : 'client';
-        addLog('system', '系统', next ? '你已进入观众模式' : '你已退出观众模式');
         return { ok: true };
     };
 
@@ -2745,8 +2603,9 @@ const useMultiplayerStore = defineStore('multiplayer', () => {
     };
 });
 
+
 // ==========================================
-// 5. 数据库 (ACUSyncManager)
+// 5. 数据库 
 // ==========================================
 const initACUSync = (store) => {
     const getWin = () => window.top || window.parent || window;
@@ -2813,20 +2672,27 @@ const initACUSync = (store) => {
     };
 
     onEventTracked('multiplayer_acu_full_sync', async (payload) => {
-        if (!store.isHost && getWin().AutoCardUpdaterAPI?.importTableAsJson) {
-            const format = { mate: { type: 'chatSheets', version: 1 } };
-            Object.keys(payload.tables).forEach(k => {
-                if (k.startsWith('sheet_')) format[k] = payload.tables[k];
-            });
-            await getWin().AutoCardUpdaterAPI.importTableAsJson(JSON.stringify(format)); // 调用 ACU 官方接口导入全量数据
-        }
+        if (store.isHost) return;
+        if (!getWin().AutoCardUpdaterAPI?.importTableAsJson) return;
+
+        const tables = payload?.tables;
+        if (!tables || typeof tables !== 'object') return;
+
+        const format = { mate: { type: 'chatSheets', version: 1 } };
+        Object.keys(tables).forEach(k => {
+            if (k.startsWith('sheet_')) {
+                format[k] = tables[k];
+            }
+        });
+
+        await getWin().AutoCardUpdaterAPI.importTableAsJson(JSON.stringify(format)); // 调用 ACU 官方接口导入全量数据
     });
 
     register();
 };
 
 // ==========================================
-// 6. 剧透遮罩渲染 (SpoilerEngine)
+// 6. 剧透遮罩渲染 
 // ==========================================
 const initSpoilerEngine = () => {
     const targetDoc = parentWindow.document;
@@ -2860,7 +2726,7 @@ const initSpoilerEngine = () => {
 };
 
 // ==========================================
-// 7. ST 原生事件桥接 (Interop)
+// 7. ST 原生事件桥接 
 // ==========================================
 const initSTHooks = (store) => {
     let streamMsgId = null; // 客户端当前流式消息 ID
@@ -2964,7 +2830,6 @@ const initSTHooks = (store) => {
                                 }
                             }
                         });
-                        store.addLog('system', '系统', '[MVU] 变量已自动同步');
                     }
                 } catch (e) { console.error('[联机Mod] MVU 自动同步失败:', e); }
             }, 500);
@@ -3076,7 +2941,6 @@ const initSTHooks = (store) => {
                 clientActiveStreamId = '';
                 clientLastSeq = 0;
 
-                store.addLog('system', '系统', 'AI回复已同步');
             } catch (e) {
                 store.addLog('error', '系统', '同步AI回复失败');
                 console.error('[联机Mod] 同步AI回复失败:', e);
@@ -3104,16 +2968,13 @@ const initSTHooks = (store) => {
             }
 
             if (!content.trim()) {
-                if (payload?.userLayerHidden) {
-                    store.addLog('system', '系统', '本轮存在隐藏输入，用户层无可展示内容');
-                } else {
+                if (!payload?.userLayerHidden) {
                     store.addLog('error', '系统', '同步用户消息为空，已忽略');
                 }
                 return;
             }
 
             await createChatMessages([{ role: 'user', message: content }]);
-            store.addLog('system', '系统', '用户消息已同步');
         } catch (e) {
             store.addLog('error', '系统', '创建用户消息失败');
             console.error('[联机Mod] 创建用户消息失败:', e);
@@ -3127,7 +2988,6 @@ const initSTHooks = (store) => {
             const lastId = getLastMessageId();
             if (lastId >= 0) {
                 await deleteChatMessages([lastId]);
-                store.addLog('system', '系统', '最新消息已同步删除');
             }
         } catch (e) {
             store.addLog('error', '系统', '删除消息失败');
@@ -3138,21 +2998,43 @@ const initSTHooks = (store) => {
     // ---- 房主：处理历史同步请求 ----
     onEventTracked('multiplayer_sync_history_request', async (payload) => {
         if (!store.isHost) return;
-        let userId, depth = 0;
-        if (typeof payload === 'string') { userId = payload; }
-        else { userId = payload.userId || ''; depth = payload.depth || 0; }
+
+        const safePayload = payload ?? {};
+        let userId = '';
+        let depth = 0;
+
+        if (typeof safePayload === 'string') {
+            userId = safePayload;
+        } else {
+            userId = (safePayload.userId || '').toString();
+            const d = Number(safePayload.depth);
+            depth = Number.isFinite(d) && d >= 0 ? Math.floor(d) : 0;
+        }
+
         try {
             const lastId = getLastMessageId();
-            if (lastId < 0) { store.addLog('system', '系统', '没有历史消息可同步'); return; }
+            if (lastId < 0) return;
+
             let startId = 0;
             if (depth > 0 && lastId >= depth) startId = lastId - depth + 1;
-            const messages = getChatMessages(`${startId}-${lastId}`).map(m => ({ role: m.role, message: m.message }));
-            store.addLog('system', '系统', `准备发送${messages.length}条历史消息 (深度: ${depth || '全部'})`);
+
+            const messages = getChatMessages(`${startId}-${lastId}`).map(m => ({
+                role: m.role,
+                message: m.message
+            }));
+
             const client = store.getClient();
             for (const msg of messages) {
-                client?.send({ type: 'sync_history_data', data: { role: msg.role, message: msg.message, targetUserId: userId } });
+                client?.send({
+                    type: 'sync_history_data',
+                    data: { role: msg.role, message: msg.message, targetUserId: userId }
+                });
             }
-            client?.send({ type: 'sync_history_data', data: { complete: true, count: messages.length, targetUserId: userId } });
+
+            client?.send({
+                type: 'sync_history_data',
+                data: { complete: true, count: messages.length, targetUserId: userId }
+            });
         } catch (e) {
             store.addLog('error', '系统', '获取历史消息失败');
             console.error('[联机Mod] 获取历史消息失败:', e);
@@ -3170,9 +3052,7 @@ const initSTHooks = (store) => {
         if (targetUserId && targetUserId !== myId) return;
 
         try {
-            if (data?.complete) {
-                store.addLog('system', '系统', `历史同步完成，共${data.count}条消息`);
-            } else if (data?.role && data?.message) {
+            if (data?.role && data?.message) {
                 await createChatMessages([{ role: data.role, message: data.message }]);
             }
         } catch (e) {
@@ -3187,7 +3067,6 @@ const initSTHooks = (store) => {
         try {
             const regexes = getTavernRegexes({ scope: 'character' });
             store.getClient()?.send({ type: 'sync_regex_data', data: { regexes, targetUserId: userId } });
-            store.addLog('system', '系统', `已发送${regexes.length}条正则`);
         } catch (e) {
             store.addLog('error', '系统', '获取正则失败');
             console.error('[联机Mod] 获取正则失败:', e);
@@ -3208,7 +3087,6 @@ const initSTHooks = (store) => {
             const { regexes } = data || {};
             if (regexes && Array.isArray(regexes)) {
                 await replaceTavernRegexes(regexes, { scope: 'character' });
-                store.addLog('system', '系统', `正则同步完成，共${regexes.length}条`);
             }
         } catch (e) {
             store.addLog('error', '系统', '替换正则失败');
@@ -3238,7 +3116,6 @@ const initSTHooks = (store) => {
                     content: { stat_data: vars.stat_data, display_data: vars.display_data, delta_data: vars.delta_data, schema: vars.schema },
                     targetUserId: userId
                 } });
-                store.addLog('system', '系统', '[MVU] 变量已发送给用户');
             } else if (reqMode === 'apotheosis') {
                 // 数据库全量同步：提取 ACU 隔离数据并广播
                 const win = parentWindow;
@@ -3288,7 +3165,6 @@ const initSTHooks = (store) => {
                 // 广播全量同步（所有客户端受益）
                 client?.broadcast({ type: 'acu_full_sync', data: { isolationKey: isoKey, tables, targetMessageId: targetMsgId } });
                 store.acuSyncState.fullSynced = true;
-                store.addLog('system', '系统', `[数据库] 已发送全量同步 (${Object.keys(tables).length} 表)`);
             } else {
                 client?.send({ type: 'sync_variables', data: { variableType: 'unknown', content: { error: `未知变量模式: ${reqMode}` }, targetUserId: userId } });
             }
@@ -3301,15 +3177,18 @@ const initSTHooks = (store) => {
     // ---- 客户端：接收变量同步数据 ----
     onEventTracked('multiplayer_sync_variables', async (payload) => {
         if (store.isHost) return;
-        const { variableType, content } = payload;
+
+        const variableType = payload?.variableType;
+        const content = payload?.content;
+
         try {
-            if (content.error) {
-                store.addLog('system', '系统', `[${variableType}] ${content.error}`);
+            if (!content || content?.error) {
                 return;
             }
+
             if (variableType === 'mvu') {
                 const msgId = getLastMessageId();
-                if (msgId >= 0 && content) {
+                if (msgId >= 0) {
                     await updateVariablesWith(v => {
                         if (content.stat_data) v.stat_data = content.stat_data;
                         if (content.display_data) v.display_data = content.display_data;
@@ -3317,7 +3196,6 @@ const initSTHooks = (store) => {
                         if (content.schema) v.schema = content.schema;
                         return v;
                     }, { type: 'message', message_id: msgId });
-                    store.addLog('system', '系统', '[MVU] 变量同步完成');
                 }
             }
         } catch (e) {
@@ -3329,16 +3207,34 @@ const initSTHooks = (store) => {
 
 
 // ==========================================
-// 8. Vue 界面组件 (UI) - Render 函数版本
+// 8. Vue 界面组件 (UI) 
 // ==========================================
 const MultiplayerPanel = defineComponent({
     setup() {
         const store = useMultiplayerStore();
+
+        const UI_TOKENS = Object.freeze({
+            panelStartOffset: 20,
+            panelFallbackWidth: 320,
+            panelFallbackHeight: 44
+        });
+
+        const UI_STYLE_TOKENS = Object.freeze({
+            gap2: 'var(--mp-s1)',
+            gap4: 'var(--mp-s2)',
+            gap8: 'var(--mp-s3)',
+            narrowInputWidth: 'var(--mp-s7)'
+        });
+
+        const px = (n) => `${n}px`;
         const isMinimized = ref(true);
         const showSettings = ref(false);
         const isDragging = ref(false);
         const panelRef = ref(null);
-        const panelStyle = reactive({ left: '20px', top: '20px' });
+        const panelStyle = reactive({
+            left: px(UI_TOKENS.panelStartOffset),
+            top: px(UI_TOKENS.panelStartOffset)
+        });
         let dragOffset = { x: 0, y: 0 };
         
         const userName = ref(store.settings.defaultUserName || '');
@@ -3371,6 +3267,41 @@ const MultiplayerPanel = defineComponent({
             }
             return Array.from(map.values());
         });
+
+        const toSafeInt = (v) => {
+            const n = Number(v);
+            return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
+        };
+
+        // 在线房间显示人数：优先使用后端提供的总人数，否则玩家数 + 观众数
+        const getRoomDisplayCurrentUsers = (room = {}) => {
+            const explicitTotal = toSafeInt(
+                room.totalUsers ??
+                room.totalCount ??
+                room.onlineCount
+            );
+
+            if (explicitTotal > 0) {
+                return explicitTotal;
+            }
+
+            const players = toSafeInt(
+                room.currentUsers ??
+                room.currentUserCount ??
+                room.playerCount ??
+                room.players
+            );
+
+            const spectators = toSafeInt(
+                room.spectatorCount ??
+                room.spectators ??
+                room.observerCount ??
+                room.watchers ??
+                room.audienceCount
+            );
+
+            return players + spectators;
+        };
 
         // 拉取在线房间列表
         const fetchRooms = async () => {
@@ -3534,6 +3465,11 @@ const MultiplayerPanel = defineComponent({
                 .sort((a, b) => getJoinOrder(a) - getJoinOrder(b));
         });
 
+        const spectatorsCollapsed = ref(true);
+        const toggleSpectatorsCollapsed = () => {
+            spectatorsCollapsed.value = !spectatorsCollapsed.value;
+        };
+
         // 在线玩家数（不含观众）
         const userCount = computed(() => onlineUsers.value.length);
 
@@ -3564,7 +3500,6 @@ const MultiplayerPanel = defineComponent({
         // 提交用户输入
         const sendInput = () => {
             if (store.spectatorMode) {
-                store.addLog('system', '系统', '观众模式下不可提交输入');
                 return;
             }
             if (!myInput.value.trim() || !store.getClient()) return;
@@ -3594,7 +3529,6 @@ const MultiplayerPanel = defineComponent({
                 }
             });
 
-            store.addLog('system', '我', '输入已提交');
             myInput.value = '';
         };
 
@@ -3613,23 +3547,69 @@ const MultiplayerPanel = defineComponent({
         const resetInputs = () => {
             store.clearPendingInputs();
             store.getClient()?.broadcast({ type: 'reset_input', data: {} });
-            store.addLog('system', '系统', '已重置输入状态');
             myInput.value = '';
         };
 
         // 客户端同步按钮
         const requestSyncHistory = () => {
-            store.getClient()?.send({ type: 'sync_history_request', data: { depth: localSettings.syncHistoryDepth || 10 } });
-            store.addLog('system', '系统', '正在请求同步历史消息...');
+            const depthRaw = Number(localSettings.syncHistoryDepth);
+            const depth = Number.isFinite(depthRaw) && depthRaw >= 0 ? Math.floor(depthRaw) : 10;
+            store.getClient()?.send({ type: 'sync_history_request', data: { depth } });
         };
         const requestSyncRegex = () => {
             store.getClient()?.send({ type: 'sync_regex_request', data: {} });
-            store.addLog('system', '系统', '正在请求同步正则...');
         };
         const requestSyncVariables = () => {
             store.getClient()?.send({ type: 'sync_variables_request', data: { variableMode: store.variableMode || 'none' } });
-            store.addLog('system', '系统', '正在请求同步变量...');
         };
+
+        const autoSyncInFlight = ref(false);
+        const triggerAutoSync = () => {
+            if (!store.isConnected) return;
+            if (store.isHost) return;
+            if (!localSettings.autoSyncOnConnect) return;
+            if (autoSyncInFlight.value) return;
+
+            autoSyncInFlight.value = true;
+            setTimeout(() => {
+                try {
+                    requestSyncHistory();
+                    requestSyncRegex();
+                    requestSyncVariables();
+                } finally {
+                    setTimeout(() => {
+                        autoSyncInFlight.value = false;
+                    }, 400);
+                }
+            }, 200);
+        };
+
+        watch(() => store.isConnected, (connected) => {
+            if (!connected) {
+                autoSyncInFlight.value = false;
+                return;
+            }
+            triggerAutoSync();
+        });
+
+        const autoSubmitInFlight = ref(false);
+        watch(allSubmitted, async (ready) => {
+            if (!ready) return;
+            if (!store.isHost) return;
+            if (store.spectatorMode) return;
+            if (!localSettings.autoSendWhenAllSubmitted) return;
+            if (getPendingMap().size <= 0) return;
+            if (autoSubmitInFlight.value) return;
+
+            autoSubmitInFlight.value = true;
+            try {
+                await submitToAI();
+            } finally {
+                setTimeout(() => {
+                    autoSubmitInFlight.value = false;
+                }, 0);
+            }
+        });
 
         // 转让房主
         const transferHost = (userId) => {
@@ -3650,12 +3630,16 @@ const MultiplayerPanel = defineComponent({
             clientUid: makeRandomUid(),
             messagePrefix: '[{name}]:',
             messageSuffix: '',
+            autoSendWhenAllSubmitted: false,
+            autoSyncOnConnect: true,
             hideUserInputContent: false,
             sendUserPersona: true,
             personaPrefix: '[{name}]的设定:',
             timedInputSeconds: 0,
             syncHistoryDepth: 10,
-            variableMode: 'none'
+            uiThemeTokens: {},
+            onlineMode: true,
+            onlineServer: 'https://room.yufugemini.cloud'
         };
         const loadSettings = () => {
             try {
@@ -3668,9 +3652,87 @@ const MultiplayerPanel = defineComponent({
             try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(localSettings)); } catch (e) {}
         };
 
+        const normalizeThemeTokenKey = (rawKey = '') => {
+            const key = String(rawKey || '').trim();
+            if (key.startsWith('--mp-')) return key;
+            if (key.startsWith('mp-')) return `--${key}`;
+            return '';
+        };
+
+        const extractThemeTokensFromPayload = (payload) => {
+            const sources = [
+                payload?.mpThemeTokens,
+                payload?.tokens,
+                payload?.variables,
+                payload
+            ];
+
+            const out = {};
+            for (const src of sources) {
+                if (!src || typeof src !== 'object' || Array.isArray(src)) continue;
+                for (const [k, v] of Object.entries(src)) {
+                    const nk = normalizeThemeTokenKey(k);
+                    if (!nk) continue;
+                    if (v === null || v === undefined) continue;
+                    out[nk] = String(v).trim();
+                }
+                if (Object.keys(out).length > 0) break;
+            }
+            return out;
+        };
+
+        const applyThemeTokens = (tokens = {}) => {
+            const doc = parentWindow.document || document;
+            const root = doc?.documentElement;
+            if (!root) return 0;
+
+            let applied = 0;
+            Object.entries(tokens || {}).forEach(([k, v]) => {
+                const nk = normalizeThemeTokenKey(k);
+                const nv = String(v || '').trim();
+                if (!nk || !nv) return;
+                root.style.setProperty(nk, nv);
+                applied++;
+            });
+            return applied;
+        };
+
+        const themeFileInputRef = ref(null);
+
+        const onThemeFileChange = async (e) => {
+            const file = e?.target?.files?.[0];
+            if (!file) return;
+
+            const _toastr = parentWindow.toastr || window.toastr;
+
+            try {
+                const raw = await file.text();
+                const json = JSON.parse(raw);
+                const tokens = extractThemeTokensFromPayload(json);
+                const count = applyThemeTokens(tokens);
+
+                if (count <= 0) {
+                    throw new Error('未找到可用的 --mp- 主题变量');
+                }
+
+                localSettings.uiThemeTokens = tokens;
+                saveSettings();
+                _toastr?.success(`UI主题导入成功（${count} 项）`);
+            } catch (err) {
+                _toastr?.error(`UI主题导入失败：${err?.message || err}`);
+            } finally {
+                if (e?.target) e.target.value = '';
+            }
+        };
+
+        // 启动时应用已保存的 UI 主题变量
+        applyThemeTokens(localSettings.uiThemeTokens || {});
+
         // 将关键运行配置归一到 store.settings
         store.settings.defaultUserName = (localSettings.defaultUserName || '').trim();
         store.settings.timedInputSeconds = Number(localSettings.timedInputSeconds) || 0;
+        store.settings.onlineMode = !!localSettings.onlineMode;
+        store.settings.onlineServer = (localSettings.onlineServer || 'https://room.yufugemini.cloud').trim();
 
         // localSettings -> store.settings
         watch(() => localSettings.timedInputSeconds, (v) => {
@@ -3686,6 +3748,22 @@ const MultiplayerPanel = defineComponent({
             const next = Number(v) || 0;
             if ((Number(localSettings.timedInputSeconds) || 0) !== next) {
                 localSettings.timedInputSeconds = next;
+                saveSettings();
+            }
+        });
+
+        watch(() => store.settings.onlineMode, (v) => {
+            const next = !!v;
+            if (localSettings.onlineMode !== next) {
+                localSettings.onlineMode = next;
+                saveSettings();
+            }
+        });
+
+        watch(() => store.settings.onlineServer, (v) => {
+            const next = (v || '').toString().trim();
+            if ((localSettings.onlineServer || '') !== next) {
+                localSettings.onlineServer = next;
                 saveSettings();
             }
         });
@@ -3825,11 +3903,30 @@ const MultiplayerPanel = defineComponent({
             }
         });
 
-        // 自动滚动日志
-        watch(() => store.chatLogs.length, () => {
+        const scrollLogsToBottom = () => {
             nextTick(() => {
-                if (logsRef.value) logsRef.value.scrollTop = logsRef.value.scrollHeight;
+                if (!logsRef.value) return;
+                logsRef.value.scrollTop = logsRef.value.scrollHeight;
             });
+        };
+
+        // 自动滚动日志（新增消息时）
+        watch(() => store.chatLogs.length, () => {
+            scrollLogsToBottom();
+        });
+
+        // 修复：展开悬浮窗时，日志默认滚动到底部
+        watch(isMinimized, (minimized) => {
+            if (!minimized) {
+                scrollLogsToBottom();
+            }
+        });
+
+        // 修复：关闭设置弹窗后，若面板处于展开状态，也滚动到底部
+        watch(showSettings, (opened) => {
+            if (!opened && !isMinimized.value) {
+                scrollLogsToBottom();
+            }
         });
 
         // 拖拽逻辑（Pointer Events：桌面 + 移动端统一）
@@ -3874,8 +3971,8 @@ const MultiplayerPanel = defineComponent({
             if (!panelEl) return;
 
             const { width: viewportWidth, height: viewportHeight } = getViewportSize();
-            const panelWidth = panelEl.offsetWidth || 320;
-            const panelHeight = panelEl.offsetHeight || 44;
+            const panelWidth = panelEl.offsetWidth || UI_TOKENS.panelFallbackWidth;
+            const panelHeight = panelEl.offsetHeight || UI_TOKENS.panelFallbackHeight;
 
             const maxLeft = Math.max(0, viewportWidth - panelWidth);
             const maxTop = Math.max(0, viewportHeight - panelHeight);
@@ -3886,8 +3983,8 @@ const MultiplayerPanel = defineComponent({
             const nextLeft = Math.min(maxLeft, Math.max(0, currentLeft));
             const nextTop = Math.min(maxTop, Math.max(0, currentTop));
 
-            panelStyle.left = nextLeft + 'px';
-            panelStyle.top = nextTop + 'px';
+            panelStyle.left = px(nextLeft);
+            panelStyle.top = px(nextTop);
         };
 
         let resizeRafId = null;
@@ -3912,8 +4009,8 @@ const MultiplayerPanel = defineComponent({
             const { width: viewportWidth, height: viewportHeight } = getViewportSize();
 
             const panelEl = panelRef.value;
-            const panelWidth = panelEl?.offsetWidth || 320;
-            const panelHeight = panelEl?.offsetHeight || 44;
+            const panelWidth = panelEl?.offsetWidth || UI_TOKENS.panelFallbackWidth;
+            const panelHeight = panelEl?.offsetHeight || UI_TOKENS.panelFallbackHeight;
 
             const maxLeft = Math.max(0, viewportWidth - panelWidth);
             const maxTop = Math.max(0, viewportHeight - panelHeight);
@@ -3921,8 +4018,8 @@ const MultiplayerPanel = defineComponent({
             const nextLeft = Math.min(maxLeft, Math.max(0, e.clientX - dragOffset.x));
             const nextTop = Math.min(maxTop, Math.max(0, e.clientY - dragOffset.y));
 
-            panelStyle.left = nextLeft + 'px';
-            panelStyle.top = nextTop + 'px';
+            panelStyle.left = px(nextLeft);
+            panelStyle.top = px(nextTop);
         };
 
         const stopPointerDrag = (e) => {
@@ -4152,7 +4249,11 @@ const MultiplayerPanel = defineComponent({
 
             // 主面板容器
             return h('div', {
-                class: ['multiplayer-panel', { minimized: isMinimized.value, dragging: isDragging.value }],
+                class: ['multiplayer-panel', {
+                    minimized: isMinimized.value,
+                    dragging: isDragging.value,
+                    'settings-open': !isMinimized.value && showSettings.value
+                }],
                 style: panelStyle,
                 ref: panelRef
             }, [
@@ -4193,19 +4294,20 @@ const MultiplayerPanel = defineComponent({
                     ].filter(Boolean))
                 ]),
 
-                // 内容区（未最小化时始终渲染，设置页时用 display:none 隐藏，模拟 v-show）
-                !isMinimized.value ? h('div', {
+                // 内容区（未最小化且未进入设置页时渲染）
+                (!isMinimized.value && !showSettings.value) ? h('div', {
                     class: 'panel-content'
                 }, [
                     // ========== 未连接状态 ==========
                     store.mode === 'disconnected' ? h('div', { class: 'settings-section' }, [
                         // 用户名区块（小标题样式）
                         h('div', { class: 'username-section' }, [
-                            h(
-                                'div',
-                                { class: 'section-title fa-solid' },
-                                String.fromCharCode(0xf007) + ' 用户名'
-                            ),
+                            h('div', { class: 'section-title' }, [
+                                h('span', { class: 'fa-solid', style: { marginRight: '6px' } }, 
+                            String.fromCharCode(0xf007)),
+                                '用户名'
+                        ]),
+
                             h('input', {
                                 value: userName.value,
                                 onInput: (e) => {
@@ -4225,8 +4327,11 @@ const MultiplayerPanel = defineComponent({
                             h('div', { key: 'rooms-section', class: 'online-rooms-section' }, [
                                 // 区块头部
                                 h('div', { class: 'section-header' }, [
-                                    h('span', { class: 'section-title fa-solid' },
-                                        String.fromCharCode(0xf0ac) + ' 在线房间'),
+                                    h('span', { class: 'section-title' }, [
+                                    h('span', { class: 'fa-solid', style: { marginRight: '6px' } }, 
+                                String.fromCharCode(0xf0ac)),
+                                    '在线房间'
+                                ]),
                                     h('button', {
                                         class: 'refresh-btn fa-solid',
                                         onClick: fetchRooms,
@@ -4255,7 +4360,7 @@ const MultiplayerPanel = defineComponent({
                                                 h('div', { class: 'room-meta' }, [
                                                     h('span', { class: 'fa-solid' },
                                                         String.fromCharCode(0xf0c0) + ' ' +
-                                                        room.currentUsers + '/' + room.maxUsers),
+                                                        getRoomDisplayCurrentUsers(room) + '/' + room.maxUsers),
                                                     h('span', {}, 'by ' + room.creatorName)
                                                 ])
                                             ])
@@ -4297,8 +4402,12 @@ const MultiplayerPanel = defineComponent({
 
                                 // 创建新房间
                                 h('div', { class: 'create-room-section' }, [
-                                    h('div', { class: 'section-title fa-solid' },
-                                        String.fromCharCode(0xf067) + ' 创建房间'),
+                                    h('div', { class: 'section-title' }, [
+                                        h('span', { class: 'fa-solid', 
+                                        style: { marginRight: '6px' } }, 
+                                    String.fromCharCode(0xf067)),
+                                        '创建房间'
+                                    ]),
                                     h('input', {
                                         value: newRoomName.value,
                                         onInput: (e) => newRoomName.value = e.target.value,
@@ -4379,53 +4488,95 @@ const MultiplayerPanel = defineComponent({
                                     : null
                             ]),
                             h('div', { class: 'user-items' },
-                                onlineUsers.value.map(u =>
-                                    h('div', {
+                                onlineUsers.value.map(u => {
+                                    const leadingNode = u.isHost
+                                        ? h(
+                                            'span',
+                                            {
+                                                class: ['user-leading-icon', 'host-crown', 'fa-solid'],
+                                                title: '房主'
+                                            },
+                                            String.fromCharCode(0xf521)
+                                        )
+                                        : (
+                                            store.isHost
+                                                ? h('button', {
+                                                    class: 'transfer-leading-btn fa-solid',
+                                                    title: '转让房主',
+                                                    onClick: (e) => {
+                                                        e.stopPropagation();
+                                                        transferHost(u.id);
+                                                    }
+                                                }, String.fromCharCode(0xf362))
+                                                : h(
+                                                    'span',
+                                                    {
+                                                        class: ['user-leading-icon', 'fa-solid'],
+                                                        title: '玩家'
+                                                    },
+                                                    String.fromCharCode(0xf007)
+                                                )
+                                        );
+
+                                    return h('div', {
                                         key: u.id,
                                         class: ['user-item', {
                                             host: u.isHost,
                                             submitted: hasSubmitted(u.id)
                                         }]
                                     }, [
-                                        // 头像
-                                        h('span', {
-                                            class: ['user-avatar', { 'avatar-submitted': hasSubmitted(u.id) }]
-                                        }, hasSubmitted(u.id) ? '✓' : (u.name || '?').charAt(0).toUpperCase()),
-                                        // 用户名
-                                        h('span', { class: 'user-name' }, u.name),
-                                        // 房主皇冠
-                                        u.isHost
-                                            ? h('span', { class: 'host-crown fa-solid' }, String.fromCharCode(0xf521))
-                                            : null,
-                                        // 等待中徽章（已移除）
-                                        null,
-                                        // 转让房主按钮（仅房主可见，且不显示在自己身上）
-                                        store.isHost && !u.isHost
-                                            ? h('button', {
-                                                class: 'transfer-btn fa-solid',
-                                                title: '转让房主',
-                                                onClick: () => transferHost(u.id)
-                                            }, String.fromCharCode(0xf362)) // fa-right-left / exchange
-                                            : null
-                                    ].filter(Boolean))
-                                )
+                                        leadingNode,
+                                        h('span', { class: 'user-name' }, u.name || '匿名')
+                                    ]);
+                                })
                             )
                         ]),
 
                         // ---- 观众列表 ----
-                        h('div', { key: 'spectator-list', class: 'spectator-list' }, [
-                            h('div', { class: 'section-title fa-solid' }, `${String.fromCharCode(0xf06e)} 观众 (${spectators.value.length})`),
-                            spectators.value.length > 0
-                                ? h('div', { class: 'spectator-items' },
-                                    spectators.value.map(u =>
-                                        h('span', { key: u.id, class: ['user-item', 'spectator-item'] }, [
-                                            h('span', { class: 'user-avatar' }, (u.name || '?').charAt(0).toUpperCase()),
-                                            h('span', { class: 'user-name' }, u.name)
-                                        ])
+                        spectators.value.length > 0
+                            ? h('div', { key: 'spectator-list', class: 'spectator-list' }, [
+                                h(
+                                    'div',
+                                    {
+                                        class: 'section-title fa-solid',
+                                        style: {
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            cursor: 'pointer'
+                                        },
+                                        onClick: toggleSpectatorsCollapsed
+                                    },
+                                    [
+                                        h('span', {}, `${String.fromCharCode(0xf06e)} 观众 (${spectators.value.length})`),
+                                        h(
+                                            'span',
+                                            { class: 'fa-solid' },
+                                            spectatorsCollapsed.value
+                                                ? String.fromCharCode(0xf078)
+                                                : String.fromCharCode(0xf077)
+                                        )
+                                    ]
+                                ),
+                                !spectatorsCollapsed.value
+                                    ? h('div', { class: 'spectator-items' },
+                                        spectators.value.map(u =>
+                                            h('span', { key: u.id, class: ['user-item', 'spectator-item'] }, [
+                                                h(
+                                                    'span',
+                                                    {
+                                                        class: ['user-leading-icon', 'fa-solid'],
+                                                        title: '观众'
+                                                    },
+                                                    String.fromCharCode(0xf06e)
+                                                ),
+                                                h('span', { class: 'user-name' }, u.name || '匿名')
+                                            ])
+                                        )
                                     )
-                                )
-                                : h('div', { class: 'empty-inputs' }, '暂无观众')
-                        ]),
+                                    : null
+                            ])
+                            : null,
 
                         // ---- 聊天日志 ----
                         h('div', { class: 'section-title fa-solid' }, `${String.fromCharCode(0xf4ad)} 聊天消息`),
@@ -4474,8 +4625,6 @@ const MultiplayerPanel = defineComponent({
 
                         // ---- 输入提交区 ----
                         h('div', { key: 'input-submit', class: 'input-submit-area' }, [
-                            h('div', { class: 'section-title' }, '本轮输入'),
-
                             // 客户端同步按钮行（非房主可见）
                             !store.isHost
                                 ? h('div', { class: 'sync-buttons-row' }, [
@@ -4505,7 +4654,7 @@ const MultiplayerPanel = defineComponent({
                                     class: 'input-textarea',
                                     placeholder: store.isHost
                                         ? '房主输入（可选，会与其他输入合并）...'
-                                        : '输入你的回复内容，点击提交发送...',
+                                        : '输入你的本轮内容，点击提交发送...',
                                     rows: 3
                                 })
                                 : null,
@@ -4527,7 +4676,7 @@ const MultiplayerPanel = defineComponent({
                                         onClick: mySubmitted.value ? revokeInput : sendInput,
                                         disabled: mySubmitted.value ? false : !myInput.value.trim()
                                     }, mySubmitted.value
-                                        ? `${String.fromCharCode(0xf2ea)} 撤回输入`
+                                        ? `${String.fromCharCode(0xf2ea)} 撤回`
                                         : '提交输入'),
                                     // 房主立即发送按钮
                                     store.isHost
@@ -4535,7 +4684,7 @@ const MultiplayerPanel = defineComponent({
                                             class: 'action-btn primary',
                                             onClick: submitToAI,
                                             disabled: getPendingMap().size === 0
-                                        }, '立即发送 (' + getPendingMap().size + ')')
+                                        }, '立即发送 ')
                                         : null
                                 ].filter(Boolean))
                                 : null
@@ -4566,70 +4715,27 @@ const MultiplayerPanel = defineComponent({
                     class: 'settings-modal'
                 }, [
                     h('div', { class: 'settings-modal-content' }, [
-                    // 弹窗头部
-                    h('div', { class: 'settings-modal-header' }, [
-                        h('span', { class: 'fa-solid' }, String.fromCharCode(0xf013) + ' 设置'),
-                        h('button', {
-                            class: 'icon-btn fa-solid',
-                            onClick: () => showSettings.value = false
-                        }, String.fromCharCode(0xf00d))
-                    ]),
-
-                    // 设置主体
+                    // 设置主体（无内置大标题，通过顶部“设置”按钮切换开关）
                     h('div', { class: 'settings-modal-body' }, [
 
-                        // ---- 在线模式开关 ----
-                        h('div', { class: 'setting-item toggle-item' }, [
-                            h('div', {
-                                class: 'toggle-label',
-                                onClick: () => { store.settings.onlineMode = !store.settings.onlineMode; }
-                            }, [
-                                h('span', { class: 'fa-solid' }, String.fromCharCode(0xf0ac) + ' 在线模式:'),
-                                h('span', { class: ['toggle-switch', { active: store.settings.onlineMode }] })
-                            ]),
-                            h('small', { class: 'hint' }, '连接到公共服务器创建/加入房间')
+                        // ---- UI主题导入（置顶） ----
+                        h('div', { class: 'setting-item', style: { marginTop: UI_STYLE_TOKENS.gap4 } }, [
+                            h('label', { class: 'mp-theme-import-label' }, 'UI主题导入:'),
+                            h('input', {
+                                ref: themeFileInputRef,
+                                type: 'file',
+                                accept: '.json,application/json',
+                                style: { display: 'none' },
+                                onChange: onThemeFileChange
+                            }),
+                            h('button', {
+                                class: 'action-btn secondary fa-solid',
+                                onClick: () => themeFileInputRef.value?.click()
+                            }, String.fromCharCode(0xf093) + ' 导入JSON'),
+                            h('small', { class: 'hint' }, '支持 mpThemeTokens / tokens / variables / 根对象中的 --mp- 变量')
                         ]),
 
-                        h('div', { class: 'setting-item toggle-item' }, [
-                            h('div', {
-                                class: 'toggle-label',
-                                onClick: () => {
-                                    const next = !store.spectatorMode;
-                                    const ret = store.setSpectatorMode(next);
-                                    if (ret?.ok === false) return;
-
-                                    saveSettings();
-                                }
-                            }, [
-                                h('span', { class: 'fa-solid' }, String.fromCharCode(0xf06e) + ' 观众模式:'),
-                                h('span', { class: ['toggle-switch', { active: store.spectatorMode }] })
-                            ]),
-                            h(
-                                'small',
-                                { class: 'hint' },
-                                store.isHost
-                                    ? '房主不可切换为观众模式'
-                                    : (store.isConnected ? '已连接：立即切换观战状态' : '未连接：作为默认加入身份')
-                            )
-                        ]),
-
-                        // ---- 服务器地址（仅在线模式） ----
-                        store.settings.onlineMode
-                            ? h('div', { class: 'setting-item' }, [
-                                h('label', {}, '服务器地址:'),
-                                h('input', {
-                                    value: store.settings.onlineServer,
-                                    onInput: (e) => { store.settings.onlineServer = e.target.value; },
-                                    placeholder: 'https://room.example.com',
-                                    class: 'settings-input'
-                                })
-                            ])
-                            : null,
-
-                        // ---- 分割线 ----
-                        h('hr', { class: 'settings-divider' }),
-
-                        // ---- 用户名 ----
+                        // ---- 用户名（置顶） ----
                         h('div', { class: 'setting-item' }, [
                             h('label', {}, '用户名'),
                             h('input', {
@@ -4645,8 +4751,8 @@ const MultiplayerPanel = defineComponent({
                             })
                         ]),
 
-                        // ---- UID ----
-                        h('div', { class: 'setting-item' }, [
+                        // ---- UID（置顶，用户名下方） ----
+                        h('div', { class: 'setting-item', style: { marginTop: UI_STYLE_TOKENS.gap2 } }, [
                             h('label', {}, 'UID:'),
                             h('input', {
                                 value: localSettings.clientUid,
@@ -4665,6 +4771,55 @@ const MultiplayerPanel = defineComponent({
                             )
                         ]),
 
+                        // ---- 在线模式开关 ----
+                        h('div', { class: 'setting-item toggle-item', style: { marginTop: UI_STYLE_TOKENS.gap4 } }, [
+                            h('div', {
+                                class: 'toggle-label',
+                                onClick: () => { store.settings.onlineMode = !store.settings.onlineMode; }
+                            }, [
+                                h('span', { class: 'fa-solid' }, String.fromCharCode(0xf0ac) + ' 在线模式:'),
+                                h('span', { class: ['toggle-switch', { active: store.settings.onlineMode }] })
+                            ]),
+                            h('small', { class: 'hint' }, '连接到公共服务器创建/加入房间')
+                        ]),
+
+                        // ---- 服务器地址（仅在线模式） ----
+                        store.settings.onlineMode
+                            ? h('div', { class: 'setting-item', style: { marginBottom: UI_STYLE_TOKENS.gap2 } }, [
+
+                                h('label', {}, '服务器地址:'),
+                                h('input', {
+                                    value: store.settings.onlineServer,
+                                    onInput: (e) => { store.settings.onlineServer = e.target.value; },
+                                    placeholder: 'https://room.example.com',
+                                    class: 'settings-input'
+                                })
+                            ])
+                            : null,
+
+                        // ---- 观众模式 ----
+                        h('div', { class: 'setting-item toggle-item', style: { marginTop: UI_STYLE_TOKENS.gap4 } }, [
+                            h('div', {
+                                class: 'toggle-label',
+                                onClick: () => {
+                                    const next = !store.spectatorMode;
+                                    const ret = store.setSpectatorMode(next);
+                                    if (ret?.ok === false) return;
+                                    saveSettings();
+                                }
+                            }, [
+                                h('span', { class: 'fa-solid' }, String.fromCharCode(0xf06e) + ' 观众模式:'),
+                                h('span', { class: ['toggle-switch', { active: store.spectatorMode }] })
+                            ]),
+                            h(
+                                'small',
+                                { class: 'hint' },
+                                store.isHost
+                                    ? '房主不可切换为观众模式'
+                                    : (store.isConnected ? '已连接：立即切换观战状态' : '未连接：作为默认加入身份')
+                            )
+                        ]),
+
                         // ---- 变量模式 ----
                         h('div', { class: 'setting-item' }, [
                             h('label', {}, '变量模式 (房主设置):'),
@@ -4680,8 +4835,63 @@ const MultiplayerPanel = defineComponent({
                             h('small', { class: 'hint' }, '支持MVU和数据库表数据同步')
                         ]),
 
+                        // ---- 自动发送开关（仅房主可见）----
+                        store.isHost
+                            ? h('div', { class: 'setting-item toggle-item' }, [
+                                h('div', {
+                                    class: 'toggle-label',
+                                    onClick: () => {
+                                        localSettings.autoSendWhenAllSubmitted = !localSettings.autoSendWhenAllSubmitted;
+                                        saveSettings();
+                                    }
+                                }, [
+                                    h('span', {}, '自动发送:'),
+                                    h('span', { class: ['toggle-switch', { active: localSettings.autoSendWhenAllSubmitted }] })
+                                ]),
+                                h('small', { class: 'hint' }, '开启后，所有玩家提交完成将自动发送')
+                            ])
+                            : null,
+
+                        // ---- 限时输入（仅房主可见，放在自动发送下一行） ----
+                        store.isHost
+                            ? h('div', { class: 'setting-item' }, [
+                                h('label', {}, '限时输入 (秒):'),
+                                h('input', {
+                                    type: 'number',
+                                    value: localSettings.timedInputSeconds,
+                                    onInput: (e) => { localSettings.timedInputSeconds = parseInt(e.target.value) || 0; },
+                                    onChange: saveSettings,
+                                    min: 0,
+                                    max: 300,
+                                    class: 'settings-input',
+                                    style: { width: UI_STYLE_TOKENS.narrowInputWidth }
+                                }),
+                                h('small', { class: 'hint' }, '有人提交后N秒自动发送，0为关闭')
+                            ])
+                            : null,
+
+                        // ---- 自动同步开关（仅非房主可见）----
+                        !store.isHost
+                            ? h('div', { class: 'setting-item toggle-item', style: { marginTop: UI_STYLE_TOKENS.gap4 } }, [
+                                h('div', {
+                                    class: 'toggle-label',
+                                    onClick: () => {
+                                        localSettings.autoSyncOnConnect = !localSettings.autoSyncOnConnect;
+                                        saveSettings();
+                                        if (localSettings.autoSyncOnConnect) {
+                                            triggerAutoSync();
+                                        }
+                                    }
+                                }, [
+                                    h('span', {}, '自动同步:'),
+                                    h('span', { class: ['toggle-switch', { active: localSettings.autoSyncOnConnect }] })
+                                ]),
+                                h('small', { class: 'hint' }, '开启后，连接成功将自动同步历史/正则/变量')
+                            ])
+                            : null,
+
                         // ---- 隐藏模式开关 ----
-                        h('div', { class: 'setting-item toggle-item' }, [
+                        h('div', { class: 'setting-item toggle-item', style: { marginTop: UI_STYLE_TOKENS.gap4 } }, [
                             h('div', {
                                 class: 'toggle-label',
                                 onClick: () => {
@@ -4695,42 +4905,26 @@ const MultiplayerPanel = defineComponent({
                             h('small', { class: 'hint' }, '开启后其他人看不到你输入的具体内容（显示为 ********）')
                         ]),
 
-                        // ---- 限时输入（仅房主可见） ----
-                        store.isHost
+                        // ---- 同步历史消息层数（仅非房主可见） ----
+                        !store.isHost
                             ? h('div', { class: 'setting-item' }, [
-                                h('label', {}, '限时输入 (秒):'),
+                                h('label', {}, '同步历史消息层数:'),
                                 h('input', {
                                     type: 'number',
-                                    value: localSettings.timedInputSeconds,
-                                    onInput: (e) => { localSettings.timedInputSeconds = parseInt(e.target.value) || 0; },
+                                    value: localSettings.syncHistoryDepth,
+                                    onInput: (e) => { localSettings.syncHistoryDepth = parseInt(e.target.value) || 0; },
                                     onChange: saveSettings,
                                     min: 0,
-                                    max: 300,
+                                    max: 1000,
                                     class: 'settings-input',
-                                    style: { width: '80px' }
+                                    style: { width: UI_STYLE_TOKENS.narrowInputWidth }
                                 }),
-                                h('small', { class: 'hint' }, '有人提交后N秒自动发送，0为关闭')
+                                h('small', { class: 'hint' }, '限制同步的历史消息数量，0为全部')
                             ])
                             : null,
 
-                        // ---- 同步历史消息层数 ----
-                        h('div', { class: 'setting-item' }, [
-                            h('label', {}, '同步历史消息层数:'),
-                            h('input', {
-                                type: 'number',
-                                value: localSettings.syncHistoryDepth,
-                                onInput: (e) => { localSettings.syncHistoryDepth = parseInt(e.target.value) || 0; },
-                                onChange: saveSettings,
-                                min: 0,
-                                max: 1000,
-                                class: 'settings-input',
-                                style: { width: '80px' }
-                            }),
-                            h('small', { class: 'hint' }, '限制同步的历史消息数量，0为全部')
-                        ]),
-
                         // ---- 发送用户设定开关 ----
-                        h('div', { class: 'setting-item toggle-item' }, [
+                        h('div', { class: 'setting-item toggle-item', style: { marginTop: UI_STYLE_TOKENS.gap4 } }, [
                             h('div', {
                                 class: 'toggle-label',
                                 onClick: () => { localSettings.sendUserPersona = !localSettings.sendUserPersona; saveSettings(); }
@@ -4743,7 +4937,7 @@ const MultiplayerPanel = defineComponent({
 
                         // ---- 设定前缀（仅开启发送用户设定时显示） ----
                         localSettings.sendUserPersona
-                            ? h('div', { class: 'setting-item' }, [
+                            ? h('div', { class: 'setting-item', style: { marginTop: UI_STYLE_TOKENS.gap2 } }, [
                                 h('label', {}, '设定前缀:'),
                                 h('input', {
                                     value: localSettings.personaPrefix,
@@ -4757,7 +4951,7 @@ const MultiplayerPanel = defineComponent({
                             : null,
 
                         // ---- 消息前缀（设定前缀下方、预览上方）----
-                        h('div', { class: 'setting-item message-prefix-setting' }, [
+                        h('div', { class: 'setting-item message-prefix-setting', style: { marginTop: UI_STYLE_TOKENS.gap2 } }, [
                             h('label', {}, '消息前缀:'),
                             h('input', {
                                 value: localSettings.messagePrefix,
@@ -4770,7 +4964,7 @@ const MultiplayerPanel = defineComponent({
                         ]),
 
                         // ---- 消息后缀（移动到消息前缀下一行）----
-                        h('div', { class: 'setting-item' }, [
+                        h('div', { class: 'setting-item', style: { marginTop: UI_STYLE_TOKENS.gap2 } }, [
                             h('label', {}, '消息后缀:'),
                             h('input', {
                                 value: localSettings.messageSuffix,
@@ -4787,7 +4981,7 @@ const MultiplayerPanel = defineComponent({
                                 h('span', { class: 'preview-label' }, '消息预览:'),
                                 h('span', { class: 'preview-text' }, previewText.value)
                             ]),
-                            h('div', { style: { marginTop: '8px' } }, [
+                            h('div', { style: { marginTop: UI_STYLE_TOKENS.gap8 } }, [
                                 h('span', { class: 'preview-label' }, '用户设定发送预览:'),
                                 h('span', { class: 'preview-text' }, personaPreviewText.value)
                             ])
@@ -4803,7 +4997,7 @@ const MultiplayerPanel = defineComponent({
 
 
 // ==========================================
-// 9. 挂载与初始化 (Bootstrap)
+// 9. 挂载与初始化 
 // ==========================================
 let _app = null; // 模块级变量，用于 unload 时 unmount
 let _unloadHandler = null; // 防重复绑定 unload
@@ -4854,12 +5048,17 @@ const bootstrap = () => {
         offAllTrackedEvents();
 
         try { _app?.unmount(); } catch (e) {}
-        const old = (parentWindow.document || document).getElementById(CONTAINER_ID);
+
+        const doc = (parentWindow.document || document);
+
+        const old = doc.getElementById(CONTAINER_ID);
         if (old) old.remove();
+
+        const oldStyle = doc.getElementById(STYLE_ID);
+        if (oldStyle) oldStyle.remove();
     };
 
     window.addEventListener('unload', _unloadHandler);
-
     const toastr = parentWindow.toastr || window.toastr;
     toastr?.success('联机工具 已加载完毕！', '');
 };
