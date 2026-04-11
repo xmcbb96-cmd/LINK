@@ -1,0 +1,13 @@
+{
+  "type": "script",
+  "enabled": true,
+  "name": "联机脚本 v0.9.1",
+  "id": "a560cbee-e91a-4f5f-909d-60dd6b792acd",
+  "content": "",
+  "info": "帖子：https://discord.com/channels/1134557553011998840/1460568392317669468/1460568392317669468",
+  "button": {
+    "enabled": true,
+    "buttons": []
+  },
+  "data": {}
+}

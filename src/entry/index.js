@@ -1,0 +1,11 @@
+import './preamble.js';
+import '../env/runtime.js';
+import '../env/events.js';
+import '../styles/inject.js';
+import '../network/index.js';
+import '../store/index.js';
+import '../features/acu/index.js';
+import '../features/spoiler/index.js';
+import '../tavern/hooks.js';
+import '../ui/panel.js';
+import '../ui/mount.js';

@@ -1,0 +1,12 @@
+{
+  "name": "link-multiplayer-script",
+  "private": true,
+  "version": "0.9.1",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs && node scripts/build-json.mjs",
+    "build:js": "node scripts/build.mjs",
+    "build:json": "node scripts/build-json.mjs",
+    "check": "node scripts/check.mjs"
+  }
+}
